@@ -1,0 +1,4 @@
+byte a = 10;
+a = 2;
+byte b = 5;
+b = a + b;
