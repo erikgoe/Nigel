@@ -156,6 +156,16 @@ namespace nigel
 					base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
 				}
+				else if( comb == OC::vt )
+				{
+					parseAst( a->rVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
+				}
+				else if( comb == OC::tv )
+				{
+					parseAst( a->lVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
+				}
 			}
 		}
 	}

@@ -11,10 +11,15 @@ namespace nigel
 		//Parser to generate a Abstract Syntax Tree (AST) from the lexer
 	class AST_Parser : public BuilderExecutable
 	{
+		//Static stuff
+		std::map<Token::Type, int> opPriority;//Priority of a operator. Higher nr is a higher priority.
+
 		//Runtime stuff
 		std::list<std::shared_ptr<Token>>::iterator currItr;//Next listitem for current file
-		std::stack<std::shared_ptr<AstBlock>> blockStack;//Stack of blocks
 		bool finishedParsing = false;
+		std::stack<std::shared_ptr<AstBlock>> blockStack;//Stack of blocks
+		std::shared_ptr<AstExpr> lValue;//Current lValue
+		std::stack<std::shared_ptr<AstExpr>> exprStack;//Stack of expressions to handle (e. g. for parenthesis)
 
 		CodeBase *base;
 		std::shared_ptr<Token> currToken;
@@ -22,7 +27,9 @@ namespace nigel
 
 		std::list<std::shared_ptr<CompileNotification>> notificationList;
 
-		void generateNotification( NT error, Token token );
+
+
+		void generateNotification( NT error, std::shared_ptr<Token> token );
 		std::shared_ptr<Token> next();
 			//Skips all tokens until the semicolon
 		void ignoreExpr();

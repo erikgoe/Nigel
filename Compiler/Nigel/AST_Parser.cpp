@@ -5,7 +5,7 @@ namespace nigel
 {
 	using TT = Token::Type;
 
-	void AST_Parser::generateNotification( NT error, Token token )
+	void AST_Parser::generateNotification( NT error, std::shared_ptr<Token> token )
 	{
 		notificationList.push_back( std::make_shared<CompileNotification>( error, token, base->srcFile ) );
 	}
@@ -13,7 +13,7 @@ namespace nigel
 	std::shared_ptr<Token> AST_Parser::next()
 	{
 		if( currItr == base->lexerStruct.end() ) {
-			generateNotification( NT::err_reachedEOF_unfinishedExpression, *currToken );
+			generateNotification( NT::err_reachedEOF_unfinishedExpression, currToken );
 			return nullptr;
 		}
 		lastToken = currToken;
@@ -24,6 +24,8 @@ namespace nigel
 	void AST_Parser::ignoreExpr()
 	{
 		while( next()->type != TT::tok_semicolon );
+		lValue = nullptr;
+		while( !exprStack.empty() ) exprStack.pop();//todo check
 	}
 
 	void AST_Parser::printAST( CodeBase & base )
@@ -85,6 +87,40 @@ namespace nigel
 
 	AST_Parser::AST_Parser()
 	{
+		//Add the priority to operators.
+		opPriority[TT::op_set] = 1;
+		opPriority[TT::op_add_set] = 1;
+		opPriority[TT::op_sub_set] = 1;
+		opPriority[TT::op_mul_set] = 1;
+		opPriority[TT::op_div_set] = 1;
+		opPriority[TT::op_mod_set] = 1;
+		opPriority[TT::op_shift_left_set] = 1;
+		opPriority[TT::op_shift_right_set] = 1;
+		opPriority[TT::op_and_set] = 1;
+		opPriority[TT::op_or_set] = 1;
+		opPriority[TT::op_xor_set] = 1;
+		opPriority[TT::op_or_log] = 2;
+		opPriority[TT::op_and_log] = 3;
+		opPriority[TT::op_or] = 4;
+		opPriority[TT::op_xor] = 5;
+		opPriority[TT::op_and] = 6;
+		opPriority[TT::op_eql] = 7;
+		opPriority[TT::op_not_eql] = 7;
+		opPriority[TT::op_less] = 8;
+		opPriority[TT::op_more] = 8;
+		opPriority[TT::op_less_eql] = 8;
+		opPriority[TT::op_more_eql] = 8;
+		opPriority[TT::op_shift_left] = 9;
+		opPriority[TT::op_shift_right] = 9;
+		opPriority[TT::op_add] = 10;
+		opPriority[TT::op_sub] = 10;
+		opPriority[TT::op_mul] = 11;
+		opPriority[TT::op_div] = 11;
+		opPriority[TT::op_mod] = 11;
+		opPriority[TT::op_not] = 12;
+		opPriority[TT::op_inv] = 12;
+		opPriority[TT::op_inc] = 12;
+		opPriority[TT::op_dec] = 12;
 	}
 
 	ExecutionResult AST_Parser::onExecute( CodeBase &base )
@@ -102,27 +138,27 @@ namespace nigel
 		while( !finishedParsing )//Iterate the lexer
 		{
 			std::shared_ptr<AstExpr> expr = resolveNextExpr();
-			if( expr != nullptr ) base.globalAst->content.push_back( expr );
+			//if( expr != nullptr ) base.globalAst->content.push_back( expr );
 		}
 
 		{//Print notifications
 			size_t errorCount = 0, warningCount = 0, notificationCount = 0;
 
-			for( auto n : notificationList )
+			for( auto &n : notificationList )
 			{
 				if( n->type > NT::begin_err && n->type < NT::begin_warning )
 				{//error
-					log( "Error: " + to_string( n->getCode() ), LogLevel::Error );
+					log( "Error: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Error );
 					errorCount++;
 				}
 				else if( n->type > NT::begin_warning && n->type < NT::begin_improvements )
 				{//warning
-					log( "Warning: " + to_string( n->getCode() ), LogLevel::Warning );
+					log( "Warning: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Warning );
 					warningCount++;
 				}
 				else if( n->type > NT::begin_improvements && n->type < NT::count )
 				{//notification
-					log( "Notification: " + to_string( n->getCode() ), LogLevel::Information );
+					log( "Notification: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Information );
 					notificationCount++;
 				}
 			}
@@ -155,7 +191,7 @@ namespace nigel
 			std::shared_ptr<Token> valName = next();
 			if( valName->type != TT::identifier )
 			{
-				generateNotification( NT::err_expectedIdentifier_atAllocation, *valName );
+				generateNotification( NT::err_expectedIdentifier_atAllocation, valName );
 				ignoreExpr();
 				return nullptr;
 			}
@@ -164,7 +200,7 @@ namespace nigel
 			//Save variable in current block
 			if( blockStack.top()->variables.find( newAst->lVal->name ) != blockStack.top()->variables.end() )
 			{
-				generateNotification( NT::err_variableAlreadyDefined, *valName );
+				generateNotification( NT::err_variableAlreadyDefined, valName );
 			}
 			else blockStack.top()->variables[newAst->lVal->name] = newAst->lVal;
 
@@ -172,7 +208,7 @@ namespace nigel
 			std::shared_ptr<Token> eqlSign = next();
 			if( eqlSign->type != TT::op_set )
 			{
-				generateNotification( NT::err_expectedEqlSign_atAllocation, *eqlSign );
+				generateNotification( NT::err_expectedEqlSign_atAllocation, eqlSign );
 				ignoreExpr();
 				return nullptr;
 			}
@@ -181,11 +217,12 @@ namespace nigel
 			newAst->rVal = resolveNextExpr();
 			if( !newAst->rVal->isTypeReturnable() )
 			{
-				generateNotification( NT::err_expectedExprWithReturnValue_atAllocation, *currToken );
+				generateNotification( NT::err_expectedExprWithReturnValue_atAllocation, currToken );
 				ignoreExpr();
 				return nullptr;
 			}
 
+			base->globalAst->content.push_back( newAst );//Add to ast
 			return newAst;
 		}
 		else if( token->type == TT::literalN )
@@ -193,6 +230,7 @@ namespace nigel
 			std::shared_ptr<AstLiteral> newAst = std::make_shared<AstLiteral>();
 			newAst->retType = BasicType::tByte;
 			newAst->token = token;
+
 
 			//Test for parent-expr
 			std::shared_ptr<AstExpr> parentAst = resolveNextExpr();
@@ -208,45 +246,87 @@ namespace nigel
 			String identifier = token->as<Token_Identifier>()->identifier;
 			std::shared_ptr<AstVariable> newAst;
 			if( blockStack.top()->variables.find( identifier ) == blockStack.top()->variables.end() ) {
-				generateNotification( NT::err_undefinedIdentifier, *token );
+				generateNotification( NT::err_undefinedIdentifier, token );
 				newAst = std::make_shared<AstVariable>();
-
 			}
 			else newAst = blockStack.top()->variables[identifier];
 
-			//Test for parent-expr
-			std::shared_ptr<AstExpr> parentAst = resolveNextExpr();
-			if( parentAst != nullptr )
+			if( lastToken->type == TT::identifier )
 			{
-				parentAst->as<AstTerm>()->lVal = newAst;
-				return parentAst;
+				generateNotification( NT::err_unexpectedIdentifierAfterIdentifier, currToken );
+				ignoreExpr();
 			}
-			else return newAst;
+			
+			if( lValue == nullptr )
+			{
+				lValue = newAst;//New current value
+			}
+			return newAst;
 		}
 		else if( token->isOperator() )
 		{//Expression is a term
 			std::shared_ptr<AstTerm> newAst = std::make_shared<AstTerm>();
+
+			if( lValue == nullptr )
+			{//Check if hast lValue
+				generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+			auto clVal = lValue;//Current lValue
 			newAst->op = token->type;
 
-			//Test for parent-expr
+			//Check rValue
 			std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-			if( nextAst != nullptr )
-			{
-				if( !nextAst->isTypeReturnable() )
-				{//lValue is not a returnable
-					generateNotification( NT::err_expectedExprWithReturnValue_atOperation, *currToken );
-					ignoreExpr();
-					return newAst;
-				}
-				//if( nextAst->type == AstExpr::Type::term ) nextAst->as<AstTerm>()->lVal = newAst;
-				newAst->rVal = nextAst->as<AstReturning>();
-				newAst->retType = newAst->rVal->retType;
+			if( nextAst == nullptr )
+			{//no rValue
+				generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+				return nullptr;
+			}
+			if( !nextAst->isTypeReturnable() )
+			{//lValue is not a returnable
+				generateNotification( NT::err_expectedExprWithReturnValue_atOperation, currToken );
+				ignoreExpr();
 				return newAst;
 			}
-			else return newAst;
+			newAst->rVal = nextAst->as<AstReturning>();
+
+
+			//Check if lValue is a term
+			std::shared_ptr<AstTerm> clTerm = nullptr;
+			while( clVal->type == AstExpr::Type::term && opPriority[clVal->as<AstTerm>()->op] < opPriority[newAst->op] )
+			{//Check if lTerm has to be splitted up
+				clTerm = clVal->as<AstTerm>();
+				clVal = clVal->as<AstTerm>()->rVal;
+			}
+			//Test for lTerm
+			if( clTerm != nullptr )
+			{//Min. 1 term was splitted up
+				newAst->lVal = clVal->as<AstReturning>();
+				clTerm->rVal = newAst;
+			}
+			else
+			{//LValue is a atomic astExpr
+				newAst->lVal = clVal->as<AstReturning>();
+				lValue = newAst;//Set as lValue
+			}
+
+
+			if( newAst->rVal->retType != newAst->lVal->retType )
+			{
+				generateNotification( NT::err_unmatchingTypeFound_atTerm, token );
+			}
+			else newAst->retType = newAst->lVal->retType;
+
+
+			return newAst;
 		}
 		else if( token->type == TT::tok_semicolon)
 		{//End of expression
+			if( lValue != nullptr )
+				base->globalAst->content.push_back( lValue );//Add to ast
+			lValue = nullptr;
+			while( !exprStack.empty() ) exprStack.pop();//todo check
 			return nullptr;//Finish expression
 		}
 		else if( token->type == TT::eof )
@@ -260,7 +340,7 @@ namespace nigel
 		}
 		else
 		{
-			generateNotification(NT::err_unexpectedToken, *token);
+			generateNotification(NT::err_unexpectedToken, token);
 			return nullptr;
 		}
 	}

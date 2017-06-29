@@ -63,6 +63,9 @@
     <ClInclude Include="EIR_Command.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Linker.h">
+      <Filter>Headerdateien\executables</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Nigel.cpp">
@@ -93,6 +96,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="EIR_Parser.cpp">
+      <Filter>Quelldateien\executables</Filter>
+    </ClCompile>
+    <ClCompile Include="Linker.cpp">
       <Filter>Quelldateien\executables</Filter>
     </ClCompile>
   </ItemGroup>

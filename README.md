@@ -18,6 +18,8 @@ Nigel is a new programming language for the 8051 microcontroller, with a c-like 
 * Preprocessor (and header files)
 * Standard library
 * Local variables in sub-blocks
+* Compile te compiler on linux (clang/gcc)
+* Optimizing code?
 
 ## How does it work?
 The Compiler is splitted in these parts:

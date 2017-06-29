@@ -4,6 +4,7 @@
 #include "Lexer.h"
 #include "AST_Parser.h"
 #include "EIR_Parser.h"
+#include "Linker.h"
 
 namespace nigel
 {
@@ -17,9 +18,15 @@ namespace nigel
 		{//Lexer
 			std::list<std::shared_ptr<BuilderExecutable>> e;
 			e.push_back( std::make_shared<Lexer>() );
+			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "lexer -c [sourcePath] -o [destinationPath]", e );
+		}
+		{//Builder
+			std::list<std::shared_ptr<BuilderExecutable>> e;
+			e.push_back( std::make_shared<Lexer>() );
 			e.push_back( std::make_shared<AST_Parser>() );
 			e.push_back( std::make_shared<EIR_Parser>() );
-			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "\n--lexer", e );
+			e.push_back( std::make_shared<Linker>() );
+			builderTasks["build"] = std::make_shared<BuilderTask>( "Builder", "Creates a hex file from a soucecode file.", "build -c [sourcePath] -o [destinationPath]", e );
 		}
 	}
 
@@ -27,13 +34,18 @@ namespace nigel
 	int Builder::buildFromCL( int argc, char ** argv )
 	{
 		//Args
+		String operation;
 		std::set<char> flags;
 		std::map<String, std::list<String>> args;
 		fs::path currentPath = fs::path( argv[0] ).generic( );
+		std::list<String> otherParams;
+
+		if( argc < 2 ) return 1;
+		operation = argv[1];
 
 		{//Create args-list from argc & argv
 			String lastParameter = "";
-			for( size_t i = 1 ; i < static_cast<size_t>( argc ) ; i++ )
+			for( size_t i = 2 ; i < static_cast<size_t>( argc ) ; i++ )
 			{
 				String v = String( argv[i] );
 				if( v.size() > 1 )
@@ -50,40 +62,35 @@ namespace nigel
 							for( size_t j = 1 ; j < v.size() ; j++ ) flags.insert( v[j] );
 						}
 					}
-					else
+					else if( args.empty() )
 					{
-						if( args.empty() )
-						{//Add parameter to args
-							lastParameter = v.substr( 1 );
-							args.insert( std::pair<String, std::list<String>>( lastParameter, std::list<String>() ) );
-						}
-						else
-						{//Found parameter
-							args[lastParameter].push_back( v );
-						}
+						otherParams.push_back( v );
 					}
+					else args[lastParameter].push_back( v );
 				}
 			}
 		}
 
 
 		//Decide which operation should be executed
-		if( args.find( "help" ) != args.end() )
+		if( operation == "help" || operation == "--help" )
 		{//Print help text.
-			if( args.find( "help" )->second.empty() )
+			if( otherParams.empty() )
 			{//General help
 				log( "Nigel is a compiler for the nigel programing language.\nIt can create executable hex files for the 8051 microcontroller.\n" );
+				log( "nigel --help\nnigel help                Print this information text. Type nigel --help [command] to get more \n                          information about a specific command." );
+				log( "nigel --version\nnigel version             Print the version information." );
 				for( auto c : builderTasks )
 				{
-					logMultiline( "nigel --" + c.first );
+					logMultiline( "nigel " + c.first );
 					for( size_t i = 0 ; i < 20 - c.first.size() ; i++ ) logMultiline( " " );
 					log( c.second->getDescription() );
 				}
 			}
 			else
 			{
-				String command = args.find( "help" )->second.front();
-				if( command == "help" )
+				String command = otherParams.front();
+				if( command == "help [command]" )
 				{
 					log( "Prints out a list of all available sub-commands." );
 				}
@@ -94,33 +101,43 @@ namespace nigel
 				else if( builderTasks.find( command ) != builderTasks.end() )
 				{//Print help text for a command
 					BuilderTask &task = *builderTasks.find( command )->second;
-					log( task.getName() );
+					log( "Nigel " + task.getName() );
 					log( task.getDescription() );
-					log( task.getHelp() );
+					log( "\nnigel " + task.getHelp() + "\n" );
+
+					log( "   sourcePath             Path to the source file." );
+					log( "   destinationPath        File to write to." );
 				}
 			}
 		}
-		else if( args.find( "version" ) != args.end() )
+		else if( operation == "version" || operation == "--version" )
 		{//Print version information.
 			log( "Nigel compiler version " + to_string( NIGEL_VERSION ) );
 		}
-		else 
-		{//Execute other operation.
-			for( auto command : args )
+		else if( builderTasks.find( operation ) != builderTasks.end() )
+		{//Execute other operation. Found operation.
+			ExecutionResult result;
+			try
 			{
-				if( command.first != "help" && command.first != "version" && builderTasks.find( command.first ) != builderTasks.end() )
-				{//Found operation
-					ExecutionResult result = builderTasks.find( command.first )->second->execute( command.second );
-					if( result != ExecutionResult::success )
-					{//Panic
-						log( "An error occurred while processing '" + command.first + "'", LogLevel::Error );
-						return static_cast<int>(result);
-					}
-				}
+				result = builderTasks.find( operation )->second->execute( args );
+			}
+			catch( std::exception &e )
+			{
+				log( "An internel compiler error occourred: " + String( e.what() ), LogLevel::Error );
+				result = ExecutionResult::internalError;
+			}
+			catch( ... )
+			{
+				log( "An unknown internel compiler error occourred!", LogLevel::Error );
+				result = ExecutionResult::unknownInternalError;
+			}
+			if( result != ExecutionResult::success )
+			{//Panic
+				log( "An error occurred while processing '" + operation + "'", LogLevel::Error );
+				return static_cast< int >( result );
 			}
 		}
-
-
+		
 		return 0;
 	}
 }

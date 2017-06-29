@@ -3,7 +3,7 @@
 
 namespace nigel
 {
-	String Token::toString( bool extended )
+	String Token::toString( bool extended ) const
 	{
 		if( type == Token::Type::eof ) return "EOF";
 		else if( type == Token::Type::ppEnd ) return "PP-END";
@@ -37,6 +37,10 @@ namespace nigel
 		else if( type == Token::Type::op_less ) return ">";
 		else if( type == Token::Type::op_more_eql ) return "<=";
 		else if( type == Token::Type::op_less_eql ) return ">=";
+		else if( type == Token::Type::op_shift_left ) return "<<";
+		else if( type == Token::Type::op_shift_right ) return ">>";
+		else if( type == Token::Type::op_shift_left_set ) return "<<=";
+		else if( type == Token::Type::op_shift_right_set ) return ">>=";
 		else if( type == Token::Type::op_not ) return "!";
 		else if( type == Token::Type::op_and ) return "&";
 		else if( type == Token::Type::op_and_set ) return "&=";
@@ -66,19 +70,19 @@ namespace nigel
 		else if( type == Token::Type::tok_grave ) return "`";
 		else return "-!-UNKNOWN-!-";
 	}
-	String Token_NumberL::toString( bool extended )
+	String Token_NumberL::toString( bool extended ) const
 	{
 		return to_string( number ) + ( extended ? "\t\tas number literal" : "" );
 	}
-	String Token_StringL::toString( bool extended )
+	String Token_StringL::toString( bool extended ) const
 	{
 		return string + ( extended ? "\t\tas string literal" : "" );
 	}
-	String Token_Identifier::toString( bool extended )
+	String Token_Identifier::toString( bool extended ) const
 	{
 		return identifier + ( extended ? "\t\tas identifier" : "" );
 	}
-	String Token_Comment::toString( bool extended )
+	String Token_Comment::toString( bool extended ) const
 	{
 		return comment + ( extended ? "\t\tas comment" : "" );
 	}

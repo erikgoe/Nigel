@@ -32,22 +32,29 @@ namespace nigel
 	{
 		if( !str.empty() && !isWhitespace( str.front() ) )
 		{
+			std::shared_ptr<Token> token;
 			if( isOperator( str.front() ) )
 			{
-				base.lexerStruct.push_back( std::make_shared<Token_Operator>( str ) );
+				token = std::make_shared<Token_Operator>( str );
 			}
 			else if( isNumber( str.front() ) )
 			{
-				base.lexerStruct.push_back( std::make_shared<Token_NumberL>( stoi(str) ) );
+				token = std::make_shared<Token_NumberL>( stoi( str ) );
 			}
 			else if( isDividingToken( str.front() ) )
 			{
-				base.lexerStruct.push_back( std::make_shared<Token_DividingToken>( str.front() ) );
+				token = std::make_shared<Token_DividingToken>( str.front() );
 			}
 			else
 			{
-				base.lexerStruct.push_back( std::make_shared<Token_Identifier>( str ) );
+				token = std::make_shared<Token_Identifier>( str );
 			}
+
+			token->lineNo = currLineNo;
+			token->columnNo = ( currLineNo == previousLineNo ? previousColumnNo : 1 );
+			base.lexerStruct.push_back( token );
+			previousLineNo = currLineNo;
+			previousColumnNo = currColumnNo;
 		}
 		str.clear();
 	}
@@ -70,6 +77,8 @@ namespace nigel
 		u8 c, previousC = 0;
 		String tmpStr;
 		bool finish = false;
+		currLineNo = 1;
+		currColumnNo = 0;
 
 		//Special values
 		bool isNewline = false;//To enable lastWasNewline
@@ -88,6 +97,12 @@ namespace nigel
 				finish = true;
 				c = 0;
 			}
+			if( previousC == '\r' || c == '\n' )
+			{//A newline
+				currColumnNo = 0;
+				currLineNo++;
+			}
+			if( previousC != '\r' || c != '\n' ) currColumnNo++;
 
 			if( isString && c != '"' )
 			{//Capture string literal
@@ -141,6 +156,7 @@ namespace nigel
 				{//Finish previous token
 					adoptToken( tmpStr, base );
 				}
+				previousColumnNo++;
 			}
 			else if( isOperator( c ) )
 			{
@@ -302,15 +318,15 @@ namespace nigel
 				{
 					if( ( identifier[1] != '=' ||
 						( identifier[0] != '+' && identifier[0] != '-' && identifier[0] != '*' && identifier[0] != '/' && identifier[0] != '%' && identifier[0] != '=' && identifier[0] != '!' && identifier[0] != '<' && identifier[0] != '>' && identifier[0] != '&' && identifier[0] != '|' && identifier[0] != '^' ) ) &&
-						identifier != "&&" && identifier != "||" )
+						identifier.substr(0, 2) != "&&" && identifier.substr( 0, 2 ) != "||" && identifier.substr( 0, 2 ) != "<<" && identifier.substr( 0, 2 ) != ">>" && identifier.substr( 0, 3 ) != "<<=" && identifier.substr( 0, 3 ) != ">>=" )
 					{//Split operator
 						tmp = std::make_shared<Token_Operator>( String(1, identifier[0]) );
 						token->swap( tmp );
 						tmp = std::make_shared<Token_Operator>( identifier.substr( 1 ) );
 						base.lexerStruct.insert( token, tmp );
-					}
+					}//todo: catch case of e. g. "&&-"
 					else
-					{//Define dual char operators
+					{//Define dual (or more) char operators
 						if( identifier == "+=" )
 						{
 							tmp = std::make_shared<Token>( Token::Type::op_add_set );
@@ -379,6 +395,26 @@ namespace nigel
 						else if( identifier == "||" )
 						{
 							tmp = std::make_shared<Token>( Token::Type::op_or_log );
+							token->swap( tmp );
+						}
+						else if( identifier == "<<" )
+						{
+							tmp = std::make_shared<Token>( Token::Type::op_shift_left );
+							token->swap( tmp );
+						}
+						else if( identifier == ">>" )
+						{
+							tmp = std::make_shared<Token>( Token::Type::op_shift_right );
+							token->swap( tmp );
+						}
+						else if( identifier == "<<=" )
+						{
+							tmp = std::make_shared<Token>( Token::Type::op_shift_left_set );
+							token->swap( tmp );
+						}
+						else if( identifier == ">>=" )
+						{
+							tmp = std::make_shared<Token>( Token::Type::op_shift_right_set );
 							token->swap( tmp );
 						}
 					}
@@ -539,6 +575,12 @@ namespace nigel
 					token->swap( tmp );
 				}
 			}
+			if( tmp != nullptr )
+			{//Move also metadata. Use inverted order because of swap
+				( *token )->lineNo = tmp->lineNo;
+				( *token )->columnNo = tmp->columnNo;
+			}
+			tmp = nullptr;
 		}
 
 		return ExecutionResult::success;

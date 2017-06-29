@@ -11,10 +11,14 @@ namespace nigel
 		this->executables = executables;
 	}
 
-	ExecutionResult BuilderTask::execute( std::list<String> parameters )
+	ExecutionResult BuilderTask::execute( std::map<String, std::list<String>> parameters )
 	{
 		CodeBase codeBase;
-		codeBase.srcFile = parameters.front();
+
+		if( parameters.find( "c" ) != parameters.end() ) codeBase.srcFile = parameters["c"].front();
+		if( parameters.find( "o" ) != parameters.end() ) codeBase.destFile = parameters["o"].front();
+
+
 		for( auto e : executables )
 		{
 			ExecutionResult result = e->onExecute( codeBase );

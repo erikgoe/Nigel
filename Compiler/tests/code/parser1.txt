@@ -1,4 +1,5 @@
 byte a = 10;
-a = 2;
 byte b = 5;
-b = a + b;
+byte c = 3;
+byte d = 1;
+d = a + b+c+d;

@@ -154,6 +154,7 @@
     <ClInclude Include="EIR_Parser.h" />
     <ClInclude Include="HelperDefinitions.h" />
     <ClInclude Include="Lexer.h" />
+    <ClInclude Include="Linker.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Token.h" />
     <ClInclude Include="Version.h" />
@@ -166,6 +167,7 @@
     <ClCompile Include="EIR_Parser.cpp" />
     <ClCompile Include="HelperDefinitions.cpp" />
     <ClCompile Include="Lexer.cpp" />
+    <ClCompile Include="Linker.cpp" />
     <ClCompile Include="Nigel.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

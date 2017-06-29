@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 
 #include <exception>
 #include <stdexcept>

@@ -22,8 +22,12 @@ namespace nigel
 			err_variableAlreadyDefined,
 			err_undefinedIdentifier,
 
+			err_unexpectedIdentifierAfterIdentifier,
+			err_expectedIdentifierBeforeOperator,
+			err_expectedIdentifierAfterOperator,
 			err_expectedExprWithReturnValue_atOperation,
 			err_unmatchingTypeFound_atTerm,
+
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 
@@ -33,14 +37,14 @@ namespace nigel
 		} type;
 
 		const fs::path file;
-		const Token token;
+		const std::shared_ptr<Token> token;
 
 		u64 getCode()
 		{
 			return static_cast< u64 >( type );
 		}
 
-		CompileNotification( Type type, Token token, fs::path file )
+		CompileNotification( Type type, std::shared_ptr<Token> token, fs::path file )
 			: CompileNotification::type(type), CompileNotification::token(token), CompileNotification::file(file)
 		{
 		}

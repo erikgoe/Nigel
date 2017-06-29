@@ -11,6 +11,9 @@ namespace nigel
 		unknownError = -1,
 		success,
 
+		internalError,
+		unknownInternalError,
+
 		astParsingFailed,
 
 		count
@@ -40,7 +43,7 @@ namespace nigel
 		String getName() { return name; }
 		String getDescription() { return description; }
 		String getHelp() { return helpText; }
-		ExecutionResult execute(std::list<String> parameters);
+		ExecutionResult execute( std::map<String, std::list<String>> parameters);
 	};
 }
 

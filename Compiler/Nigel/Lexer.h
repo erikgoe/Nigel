@@ -14,6 +14,11 @@ namespace nigel
 		bool isDividingToken(char c);
 		bool isIdentifier( char c );
 
+		size_t currLineNo = 1;
+		size_t currColumnNo = 0;
+		size_t previousLineNo = 0;//Line in the code file
+		size_t previousColumnNo = 0;//Column in the code file
+
 		//Determine the token type and write it to the codebase.
 		void adoptToken( String &str, CodeBase &base );
 

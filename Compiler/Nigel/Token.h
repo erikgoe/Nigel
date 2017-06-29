@@ -49,6 +49,10 @@ namespace nigel
 			op_more,// >
 			op_less_eql,// <=
 			op_more_eql,// >=
+			op_shift_left,// <<
+			op_shift_right,// >>
+			op_shift_left_set,// <<=
+			op_shift_right_set,// >>=
 			op_not,// !
 			op_and,// &
 			op_and_set,// &=
@@ -59,6 +63,8 @@ namespace nigel
 			op_xor,// ^
 			op_xor_set,// ^=
 			op_inv,// ~
+			op_inc,// ++
+			op_dec,// --
 
 			dividingToken,//another divider like e. g. $
 			tok_dollar,// $
@@ -83,13 +89,18 @@ namespace nigel
 			count
 		} type;
 
+		size_t lineNo = 0;//Line in the code file
+		size_t columnNo = 0;//Column in the code file
+
+
+
 		Token( Type type )
 		{
 			this->type = type;
 		}
 		virtual ~Token() {}
 
-		virtual String toString( bool extended = false );
+		virtual String toString( bool extended = false ) const;
 
 		template <typename T>
 		std::shared_ptr<const T> as() const
@@ -101,7 +112,7 @@ namespace nigel
 		bool isOperator() const
 		{
 			return type == Type::op_add || type == Type::op_sub || type == Type::op_mul || type == Type::op_div || type == Type::op_mod || type == Type::op_add_set || type == Type::op_sub_set || type == Type::op_mul_set || type == Type::op_div_set || type == Type::op_mod_set || type == Type::op_set || type == Type::op_eql || type == Type::op_not_eql ||
-				type == Type::op_less || type == Type::op_more || type == Type::op_less_eql || type == Type::op_more_eql || type == Type::op_not || type == Type::op_and || type == Type::op_and_set || type == Type::op_and_log || type == Type::op_or || type == Type::op_or_set || type == Type::op_or_log || type == Type::op_xor || type == Type::op_xor_set || type == Type::op_inv;
+				type == Type::op_less || type == Type::op_more || type == Type::op_less_eql || type == Type::op_more_eql || type == Type::op_shift_left || type == Type::op_shift_right || type == Type::op_shift_left_set || type == Type::op_shift_right_set || type == Type::op_not || type == Type::op_and || type == Type::op_and_set || type == Type::op_and_log || type == Type::op_or || type == Type::op_or_set || type == Type::op_or_log || type == Type::op_xor || type == Type::op_xor_set || type == Type::op_inv;
 		}
 	};
 	class Token_NumberL : public Token
@@ -114,7 +125,7 @@ namespace nigel
 			this->number = number;
 		}
 
-		String toString( bool extended ) override;
+		String toString( bool extended ) const override;
 	};
 	class Token_StringL : public Token
 	{
@@ -126,7 +137,7 @@ namespace nigel
 			this->string = string;
 		}
 
-		String toString( bool extended ) override;
+		String toString( bool extended ) const override;
 	};
 	class Token_Identifier : public Token
 	{
@@ -138,7 +149,7 @@ namespace nigel
 			this->identifier = identifier;
 		}
 
-		String toString( bool extended ) override;
+		String toString( bool extended ) const override;
 	};
 	//Objects of this class will only exist temporarily and are later translated into simple tokens.
 	class Token_Operator : public Token
@@ -172,7 +183,7 @@ namespace nigel
 			this->comment = comment;
 		}
 
-		String toString( bool extended ) override;
+		String toString( bool extended ) const override;
 	};
 
 }
