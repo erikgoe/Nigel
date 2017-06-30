@@ -183,6 +183,7 @@ namespace nigel
 		if( token->type == TT::type_byte )
 		{//Allocation block
 			std::shared_ptr<AstAllocation> newAst = std::make_shared<AstAllocation>();
+			newAst->token = token;
 			newAst->lVal = std::make_shared<AstVariable>();//Create new variable
 			newAst->lVal->retType = BasicType::tByte;
 
@@ -195,6 +196,7 @@ namespace nigel
 				return nullptr;
 			}
 			else newAst->lVal->name = valName->as<Token_Identifier>()->identifier;
+			newAst->lVal->token = valName;
 
 			//Save variable in current block
 			if( blockStack.top()->variables.find( newAst->lVal->name ) != blockStack.top()->variables.end() )
@@ -226,6 +228,7 @@ namespace nigel
 		else if( token->type == TT::literalN )
 		{//Number literal at expression
 			std::shared_ptr<AstLiteral> newAst = std::make_shared<AstLiteral>();
+			newAst->token = token;
 			newAst->retType = BasicType::tByte;
 			newAst->token = token;
 
@@ -245,6 +248,7 @@ namespace nigel
 			if( blockStack.top()->variables.find( identifier ) == blockStack.top()->variables.end() ) {
 				generateNotification( NT::err_undefinedIdentifier, token );
 				newAst = std::make_shared<AstVariable>();
+				newAst->token = token;
 			}
 			else newAst = blockStack.top()->variables[identifier];
 
@@ -263,6 +267,7 @@ namespace nigel
 		else if( token->isOperator() )
 		{//Expression is a term
 			std::shared_ptr<AstTerm> newAst = std::make_shared<AstTerm>();
+			newAst->token = token;
 
 			if( lValue == nullptr )
 			{//Check if hast lValue

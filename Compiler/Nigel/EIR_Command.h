@@ -15,9 +15,12 @@ namespace nigel
 		mov_a_adr = 0xE5,
 		mov_adr_a = 0xF5,
 		mov_adr_adr = 0x85,
+		mov_r0_a = 0xF8,
+		mov_a_r0 = 0xE8,
 
 		add_a_const = 0x24,
 		add_a_adr = 0x25,
+		add_a_r0 = 0x28,
 		sub_a_const = 0x94,
 		sub_a_adr = 0x95,
 

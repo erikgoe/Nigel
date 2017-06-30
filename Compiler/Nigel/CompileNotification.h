@@ -28,10 +28,13 @@ namespace nigel
 			err_expectedExprWithReturnValue_atOperation,
 			err_unmatchingTypeFound_atTerm,
 
+			err_cannotSetAConstantLiteral,//Did you mean "==" ?
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 
 			begin_improvements = 0xffff,//All improvement notifications will start at this position.
+
+			imp_addingTwoConstantsCanBePrevented,
 
 			count
 		} type;

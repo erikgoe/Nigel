@@ -30,6 +30,7 @@ namespace nigel
 
 
 		void generateNotification( NT error, std::shared_ptr<Token> token );
+
 		std::shared_ptr<Token> next();
 			//Skips all tokens until the semicolon
 		void ignoreExpr();

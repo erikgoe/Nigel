@@ -55,6 +55,11 @@ namespace nigel
 		log( "EIR end" );
 	}
 
+	void EIR_Parser::generateNotification( NT error, std::shared_ptr<Token> token )
+	{
+		notificationList.push_back( std::make_shared<CompileNotification>( error, token, base->srcFile ) );
+	}
+
 	EIR_Parser::EIR_Parser()
 	{
 	}
@@ -75,6 +80,39 @@ namespace nigel
 		for( auto a : base.globalAst->content )
 		{//Iterate the global ast.
 			parseAst( a, varList );
+		}
+
+		{//Print notifications
+			size_t errorCount = 0, warningCount = 0, notificationCount = 0;
+
+			for( auto &n : notificationList )
+			{
+				if( n->type > NT::begin_err && n->type < NT::begin_warning )
+				{//error
+					log( "Error: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Error );
+					errorCount++;
+				}
+				else if( n->type > NT::begin_warning && n->type < NT::begin_improvements )
+				{//warning
+					log( "Warning: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Warning );
+					warningCount++;
+				}
+				else if( n->type > NT::begin_improvements && n->type < NT::count )
+				{//notification
+					log( "Notification: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Information );
+					notificationCount++;
+				}
+			}
+			if( errorCount > 0 )
+			{
+				log( "FAILED " + to_string( errorCount ) + ( errorCount>1 ? " ERRORS" : " ERROR" ) + " OCCURRED! " + to_string( warningCount ) + " warnings occurred. " + to_string( notificationCount ) + " improvements available." );
+				_getch();
+				return ExecutionResult::astParsingFailed;
+			}
+			else if( warningCount > 0 || notificationCount > 0 )
+			{
+				log( "Finshed with " + to_string( errorCount ) + " errors, " + to_string( warningCount ) + ( warningCount == 1 ? " warning" : " warnings" ) + " and " + to_string( notificationCount ) + ( warningCount == 1 ? " improvement" : " improvements" ) + "." );
+			}
 		}
 
 		printEIR( base );
@@ -131,10 +169,9 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
 				else if( a->rVal->type == AstExpr::Type::term ) comb = OC::tt;
 			}
-			//Check rValue again
+			//Memorize rVal
 			if( a->rVal->type == AstExpr::Type::variable ) rOp = varList[a->rVal->as<AstVariable>()->name];
 			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
-			else if( a->rVal->type == AstExpr::Type::term );//todo
 
 
 			//Handle operation
@@ -147,6 +184,7 @@ namespace nigel
 					parseAst( a->rVal, varList );
 					base->eirCommands.push_back( generateCmd( HexOp::mov_adr_a, lOp ) );
 				}
+				else generateNotification( NT::err_cannotSetAConstantLiteral, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_add )
 			{// +
@@ -155,15 +193,48 @@ namespace nigel
 					base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
 				}
+				else if( comb == OC::vc )
+				{
+					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, rOp ) );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
+				}
 				else if( comb == OC::vt )
 				{
 					parseAst( a->rVal, varList );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
 				}
+				else if( comb == OC::cv )
+				{
+					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
+				}
+				else if( comb == OC::cc )
+				{
+					generateNotification( NT::imp_addingTwoConstantsCanBePrevented, a->token );
+					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_const, rOp ) );
+				}
+				else if( comb == OC::ct )
+				{
+					parseAst( a->rVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_const, lOp ) );
+				}
 				else if( comb == OC::tv )
 				{
 					parseAst( a->lVal, varList );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
+				}
+				else if( comb == OC::tc )
+				{
+					parseAst( a->lVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_const, rOp ) );
+				}
+				else if( comb == OC::tt )
+				{
+					parseAst( a->lVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+					parseAst( a->rVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_r0 ) );
 				}
 			}
 		}

@@ -2,18 +2,24 @@
 #define NIGEL_EIR_PARSER_H
 
 #include "BuilderTask.h"
+#include "CompileNotification.h"
 
 namespace nigel
 {
+	using NT = CompileNotification::Type;
+
 		//Parser to translate the AST into the Early Instruction Representation (EIR).
 	class EIR_Parser : public BuilderExecutable
 	{
 
 		CodeBase *base;
 
+		std::list<std::shared_ptr<CompileNotification>> notificationList;
 
 		//Writes the EIR into the console.
 		void printEIR( CodeBase &base );
+
+		void generateNotification( NT error, std::shared_ptr<Token> token );
 
 	public:
 		enum class OperationCombination
