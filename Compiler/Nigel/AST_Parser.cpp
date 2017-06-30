@@ -67,7 +67,6 @@ namespace nigel
 			out = tabs + "<ALLOC>";
 			log( out );
 			printSubAST( ast->as<AstAllocation>()->lVal, tabCount + 1 );
-			printSubAST( ast->as<AstAllocation>()->rVal, tabCount + 1 );
 		}
 		else if( ast->type == AstExpr::Type::literal )
 		{//Print literal content
@@ -204,25 +203,24 @@ namespace nigel
 			}
 			else blockStack.top()->variables[newAst->lVal->name] = newAst->lVal;
 
+			lValue = newAst->lVal;
+
 			//Skip equal sign but print error if none found
-			std::shared_ptr<Token> eqlSign = next();
-			if( eqlSign->type != TT::op_set )
+			/*std::shared_ptr<Token> eqlSign = next();
+			if( eqlSign->type == TT::op_set )
 			{
-				generateNotification( NT::err_expectedEqlSign_atAllocation, eqlSign );
-				ignoreExpr();
-				return nullptr;
-			}
+				//Resolve rValue as retuning expression
+				newAst->rVal = resolveNextExpr();
+				if( !newAst->rVal->isTypeReturnable() )
+				{
+					generateNotification( NT::err_expectedExprWithReturnValue_atAllocation, currToken );
+					ignoreExpr();
+					return nullptr;
+				}
+			}*/
 
-			//Resolve rValue as retuning expression
-			newAst->rVal = resolveNextExpr();
-			if( !newAst->rVal->isTypeReturnable() )
-			{
-				generateNotification( NT::err_expectedExprWithReturnValue_atAllocation, currToken );
-				ignoreExpr();
-				return nullptr;
-			}
 
-			base->globalAst->content.push_back( newAst );//Add to ast
+			//base->globalAst->content.push_back( newAst );//Add to ast
 			return newAst;
 		}
 		else if( token->type == TT::literalN )
@@ -231,15 +229,14 @@ namespace nigel
 			newAst->retType = BasicType::tByte;
 			newAst->token = token;
 
-
 			//Test for parent-expr
-			std::shared_ptr<AstExpr> parentAst = resolveNextExpr();
+			/*std::shared_ptr<AstExpr> parentAst = resolveNextExpr();
 			if( parentAst != nullptr )
 			{
 				parentAst->as<AstTerm>()->lVal = newAst;
 				return parentAst;
 			}
-			else return newAst;
+			else */return newAst;
 		}
 		else if( token->type == TT::identifier )
 		{//Identifier at expression

@@ -102,13 +102,12 @@ namespace nigel
 	};
 
 		//Allocation of a variable
-	class AstAllocation : public AstExpr
+	class AstAllocation : public AstReturning
 	{
 	public:
 		std::shared_ptr<AstVariable> lVal;
-		std::shared_ptr<AstExpr> rVal;
 
-		AstAllocation() : AstExpr( AstExpr::Type::allocation ) {}
+		AstAllocation() : AstReturning( AstExpr::Type::allocation ) {}
 	};
 
 		//Any literal

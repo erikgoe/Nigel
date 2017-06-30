@@ -78,7 +78,6 @@ namespace nigel
 		}
 
 		printEIR( base );
-		_getch();
 
 		return ExecutionResult::success;
 	}
@@ -89,7 +88,7 @@ namespace nigel
 			std::shared_ptr<AstAllocation> a = ast->as<AstAllocation>();
 			std::shared_ptr<EIR_Command> newCmd = std::make_shared<EIR_Command>();
 
-			if( a->rVal->type == AstExpr::Type::literal )
+			/*if( a->rVal->type == AstExpr::Type::literal )
 			{//Use the literal
 				newCmd->operation = HexOp::mov_adr_const;
 				newCmd->op1 = varList[a->lVal->name];
@@ -99,7 +98,7 @@ namespace nigel
 			else
 			{
 				//parseAst( a->rVal );//Result to acc
-			}
+			}*/
 		}
 		else if( ast->type == AstExpr::Type::term )
 		{//Do some operation

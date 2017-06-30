@@ -13,6 +13,7 @@ namespace nigel
 
 		ExecutionResult onExecute( CodeBase &base ) override;
 
+		void printToFile( const std::vector<u8> &data, fs::path file );
 	};
 }
 
