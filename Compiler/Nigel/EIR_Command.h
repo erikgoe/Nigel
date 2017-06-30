@@ -23,6 +23,7 @@ namespace nigel
 		add_a_r0 = 0x28,
 		sub_a_const = 0x94,
 		sub_a_adr = 0x95,
+		sub_a_r0 = 0x98,
 
 		count
 	};

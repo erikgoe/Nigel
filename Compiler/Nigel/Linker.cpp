@@ -72,7 +72,7 @@ namespace nigel
 				out = "";
 			}
 		}
-		if( out.size() >= 0 )
+		if( out.size() > 0 )
 		{
 			fileStr += ":" + int_to_hex( static_cast< u8 >( out.size() / 2 ) ) + int_to_hex( startAddr ) + "00" + out + int_to_hex( static_cast< u8 >( ~( checksum % 256 )+1 ) ) + "\r\n";
 		}

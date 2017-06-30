@@ -297,3 +297,5 @@ __pycache__/
 
 #User defined
 deps
+/tests/**/*.ini
+/tests/**/*.hex
