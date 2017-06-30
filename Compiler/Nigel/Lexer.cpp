@@ -73,7 +73,7 @@ namespace nigel
 
 	ExecutionResult Lexer::onExecute( CodeBase &base )
 	{
-		std::basic_ifstream<u8> filestream( base.srcFile.string(), std::ios_base::binary );
+		size_t fileIndex = 0;
 		u8 c, previousC = 0;
 		String tmpStr;
 		bool finish = false;
@@ -89,14 +89,16 @@ namespace nigel
 		bool isMultiComment = false;//If is multiline-comment with /* */
 		int multiCommentCount = 0;//Enables nested comments
 
-		if( filestream ) while( !finish )
+		while( !finish )
 		{//Iterate whole file content
-			filestream.get( c );
-			if( !filestream.good() )
+			if( fileIndex >= base.fileCont.size() )
 			{
 				finish = true;
 				c = 0;
 			}
+			else c = base.fileCont[fileIndex++];
+
+
 			if( previousC == '\r' || c == '\n' )
 			{//A newline
 				currColumnNo = 0;

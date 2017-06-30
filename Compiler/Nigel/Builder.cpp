@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Builder.h"
 
+#include "Preprocessor.h"
 #include "Lexer.h"
 #include "AST_Parser.h"
 #include "EIR_Parser.h"
@@ -17,11 +18,13 @@ namespace nigel
 	{
 		{//Lexer
 			std::list<std::shared_ptr<BuilderExecutable>> e;
+			e.push_back( std::make_shared<Preprocessor>() );
 			e.push_back( std::make_shared<Lexer>() );
 			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "lexer -c [sourcePath] -o [destinationPath]", e );
 		}
 		{//Builder
 			std::list<std::shared_ptr<BuilderExecutable>> e;
+			e.push_back( std::make_shared<Preprocessor>() );
 			e.push_back( std::make_shared<Lexer>() );
 			e.push_back( std::make_shared<AST_Parser>() );
 			e.push_back( std::make_shared<EIR_Parser>() );

@@ -66,6 +66,9 @@
     <ClInclude Include="Linker.h">
       <Filter>Headerdateien\executables</Filter>
     </ClInclude>
+    <ClInclude Include="Preprocessor.h">
+      <Filter>Headerdateien\executables</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Nigel.cpp">
@@ -100,6 +103,9 @@
     </ClCompile>
     <ClCompile Include="Linker.cpp">
       <Filter>Quelldateien\executables</Filter>
+    </ClCompile>
+    <ClCompile Include="Preprocessor.cpp">
+      <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

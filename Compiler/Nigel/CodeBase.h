@@ -17,6 +17,8 @@ namespace nigel
 
 
 		//Generated data
+		String fileCont;//Content from the pre-processed file
+
 		std::list<std::shared_ptr<Token>> lexerStruct;//List of tokens
 		
 		std::shared_ptr<AstBlock> globalAst;//Initial block of execution.
