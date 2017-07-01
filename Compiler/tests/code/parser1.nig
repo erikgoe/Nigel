@@ -1,20 +1,73 @@
-#define byte bla
-#undef byte
 //#include "numbers.nig"
 
-#define NULL
-//#define STD
+//#pragma memmodel fast
+/*
+byte a = 10;
+byte b = 2;
+byte c;
+c = a + b;*/
 
-byte a = 2;
-byte b = 5;
-#ifdef NULL
-	#ifdef STD
-	byte c;
-	#elseif
-	byte c1;
-	#endif
-#elseif
-byte c2;
-#endif
-byte d;
-d = a + b + 1;
+
+byte x = 0;
+byte y = 1;
+byte yOld;
+byte v0;
+byte v1;
+byte v2;
+byte v3;
+byte v4;
+byte v5;
+byte v6;
+byte v7;
+byte v8;
+byte v9;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v0 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v1 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v2 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v3 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v4 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v5 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v6 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v7 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v8 = y;
+
+yOld = y;
+y = x+y;
+x = yOld;
+v9 = y;

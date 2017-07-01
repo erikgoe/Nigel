@@ -109,6 +109,7 @@ namespace nigel
 									if( str.find( '\r' ) < pos ) pos = str.find( '\r' );
 									String identifier = str.substr( 7, pos - 7 );
 									if( definitions.find( identifier ) != definitions.end() ) definitions.erase( identifier );
+									else generateNotification( NT::warn_undefinedIdentifiernAtUndefDirective, std::make_shared<String>( str ), lineCount, path );
 								}
 								else generateNotification( NT::err_incompleteUndefineDirective, std::make_shared<String>( str ), lineCount, path );
 							}
@@ -170,12 +171,20 @@ namespace nigel
 								else generateNotification( NT::err_endifWithoutIfdef, std::make_shared<String>( str ), lineCount, path );
 							}
 							else if( str.find( "error" ) == 1 )
-							{//endif
+							{//error
 								size_t pos = str.find( '\n' );
 								if( str.find( '\r' ) < pos ) pos = str.find( '\r' );
 								String errorInfo = str.substr( 8, pos - 8 );
 
 								generateNotification( NT::err_errorDirective, std::make_shared<String>( str ), lineCount, path );
+							}
+							else if( str.find( "warning" ) == 1 )
+							{//warning
+								size_t pos = str.find( '\n' );
+								if( str.find( '\r' ) < pos ) pos = str.find( '\r' );
+								String errorInfo = str.substr( 8, pos - 8 );
+
+								generateNotification( NT::warn_warningDirective, std::make_shared<String>( str ), lineCount, path );
 							}
 							else if( str.find( "include" ) == 1 )
 							{//include-directive
@@ -214,11 +223,13 @@ namespace nigel
 										}
 										else if( def == "fast" )
 										{
-											base.memModel = CodeBase::MemModel::fast;
+											definitions["byte"] = "fast byte";
+											definitions["int"] = "fast int";
 										}
-										else if( def == "large" )
+										else if( def == "norm" )
 										{
-											base.memModel = CodeBase::MemModel::large;
+											definitions["byte"] = "norm byte";
+											definitions["int"] = "norm int";
 										}
 										else generateNotification( NT::err_unknownMemModelPragma, std::make_shared<String>( str ), lineCount, path );
 									}

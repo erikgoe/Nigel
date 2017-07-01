@@ -31,6 +31,7 @@ namespace nigel
 	protected:
 		std::list<std::shared_ptr<CompileNotification>> notificationList;
 
+		void generateNotification( NT error, std::shared_ptr<fs::path> path );
 		void generateNotification( NT error, std::shared_ptr<Token> token );
 		void generateNotification( NT error, std::shared_ptr<String> lineText, size_t line, std::shared_ptr<fs::path> path );
 

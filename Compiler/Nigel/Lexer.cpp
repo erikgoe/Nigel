@@ -256,7 +256,17 @@ namespace nigel
 				}
 				else if( identifier == "unsigned" )
 				{
-					tmp = std::make_shared<Token>( Token::Type::unsigned_type );
+					tmp = std::make_shared<Token>( Token::Type::unsigned_attr );
+					token->swap( tmp );
+				}
+				else if( identifier == "fast" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::fast_attr );
+					token->swap( tmp );
+				}
+				else if( identifier == "norm" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::norm_attr );
 					token->swap( tmp );
 				}
 				else if( identifier == "if" )

@@ -18,7 +18,9 @@ namespace nigel
 			function,
 			type_byte,
 			type_int,
-			unsigned_type,
+			unsigned_attr,
+			fast_attr,
+			norm_attr,
 			cf_if,
 			cf_else,
 			cf_while,
@@ -37,12 +39,6 @@ namespace nigel
 			op_mul,// *
 			op_div,// /
 			op_mod,// %
-			op_add_set,// +=
-			op_sub_set,// -=
-			op_mul_set,// *=
-			op_div_set,// /=
-			op_mod_set,// %=
-			op_set,// =
 			op_eql,// ==
 			op_not_eql,// !=
 			op_less,// <
@@ -51,18 +47,24 @@ namespace nigel
 			op_more_eql,// >=
 			op_shift_left,// <<
 			op_shift_right,// >>
-			op_shift_left_set,// <<=
-			op_shift_right_set,// >>=
 			op_not,// !
 			op_and,// &
-			op_and_set,// &=
 			op_and_log,// &&
 			op_or,// |
-			op_or_set,// |=
 			op_or_log,// ||
 			op_xor,// ^
-			op_xor_set,// ^=
 			op_inv,// ~
+			op_set,// =
+			op_add_set,// +=
+			op_sub_set,// -=
+			op_mul_set,// *=
+			op_div_set,// /=
+			op_mod_set,// %=
+			op_shift_left_set,// <<=
+			op_shift_right_set,// >>=
+			op_and_set,// &=
+			op_or_set,// |=
+			op_xor_set,// ^=
 			op_inc,// ++
 			op_dec,// --
 

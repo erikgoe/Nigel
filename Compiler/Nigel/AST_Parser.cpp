@@ -157,6 +157,7 @@ namespace nigel
 			newAst->token = token;
 			newAst->lVal = std::make_shared<AstVariable>();//Create new variable
 			newAst->lVal->retType = BasicType::tByte;
+			newAst->lVal->model = base->memModel;//todo changable with keywords
 
 			//Get name of variable
 			std::shared_ptr<Token> valName = next();
@@ -195,6 +196,52 @@ namespace nigel
 
 			//base->globalAst->content.push_back( newAst );//Add to ast
 			return newAst;
+		}
+		if( token->type == TT::fast_attr )
+		{//Pre-allocation block
+			auto nextExpr = resolveNextExpr();
+			if( nextExpr->type != AstExpr::Type::allocation )
+			{
+				generateNotification( NT::err_noAllocationAfterVariableAttribute, nextExpr->token );
+				ignoreExpr();
+				return nullptr;
+			}
+			nextExpr->as<AstAllocation>()->lVal->model = MemModel::fast;
+			return nextExpr;
+		}
+		if( token->type == TT::norm_attr )
+		{//Pre-allocation block
+			auto nextExpr = resolveNextExpr();
+			if( nextExpr->type != AstExpr::Type::allocation )
+			{
+				generateNotification( NT::err_noAllocationAfterVariableAttribute, nextExpr->token );
+				ignoreExpr();
+				return nullptr;
+			}
+			nextExpr->as<AstAllocation>()->lVal->model = MemModel::large;
+			return nextExpr;
+		}
+		if( token->type == TT::unsigned_attr )
+		{//Pre-allocation block
+			auto nextExpr = resolveNextExpr();
+			if( nextExpr->type != AstExpr::Type::allocation )
+			{
+				generateNotification( NT::err_noAllocationAfterVariableAttribute, nextExpr->token );
+				ignoreExpr();
+				return nullptr;
+			}
+			auto allocationAst = nextExpr->as<AstAllocation>();
+			if( allocationAst->retType == BasicType::tByte )
+			{
+				allocationAst->retType = BasicType::tUbyte;
+				allocationAst->lVal->retType = BasicType::tUbyte;
+			}
+			else if( allocationAst->retType == BasicType::tInt )
+			{
+				allocationAst->retType = BasicType::tUint;
+				allocationAst->lVal->retType = BasicType::tUint;
+			}
+			return nextExpr;
 		}
 		else if( token->type == TT::literalN )
 		{//Number literal at expression

@@ -13,7 +13,7 @@ namespace nigel
 		{
 			outStr = n->file->generic_string() + "(";
 			if( n->token != nullptr ) outStr += to_string( n->token->lineNo ) + ", " + to_string( n->token->columnNo );
-			else outStr += to_string( n->line );
+			else if( n->lineText != nullptr ) outStr += to_string( n->line );
 			outStr += "): ";
 
 			if( n->type > NT::begin_err && n->type < NT::begin_warning )
@@ -37,9 +37,11 @@ namespace nigel
 
 			outStr += " " + to_string( n->getCode() ) + " \"" + notificationTexts[n->type] + "\"" ;
 			if( n->token != nullptr ) outStr += " at token '" + n->token->toString() + "'";
-			outStr += ": \n";
-
-			outStr += *n->lineText + "\n";
+			if( n->lineText != nullptr )
+			{
+				outStr += ": \n";
+				outStr += *n->lineText + "\n";
+			}
 
 			if( n->token != nullptr )
 			{
@@ -65,7 +67,47 @@ namespace nigel
 		this->helpText = helpText;
 		this->executables = executables;
 
-		//todo load notification texts
+		//Load notification texts
+		notificationTexts[NT::err_unclosedIfdef] = "An ifdef or ifndef is never closed.";
+		notificationTexts[NT::err_elseifWithoutIfdef] = "Found elseif without prior ifdef/ifndef.";
+		notificationTexts[NT::err_endifWithoutIfdef] = "Found endif without prior ifdef/ifndef.";
+		notificationTexts[NT::err_incompleteDefineDirective] = "Incomplete define-directive found. Use '#define <identifier> [definition]'.";
+		notificationTexts[NT::err_incompleteUndefineDirective] = "Incomplete undef-directive found. Use '#undef <identifier>'.";
+		notificationTexts[NT::err_incompleteIfdefDirective] = "Incomplete ifdef-directive found. Use '#ifdef <identifier>'.";
+		notificationTexts[NT::err_incompleteIfndefDirective] = "Incomplete ifndef-directive found. Use '#ifndef <identifier>'.";
+		notificationTexts[NT::err_incompleteIncludeDirective] = "Incomplete include-directive found. Use '#include \"<path_to_file>\"'.";
+		notificationTexts[NT::err_incompletePragma] = "Incomplete pragma-directive found. Use '#pragma <command> [parameter [...]]'.";
+		notificationTexts[NT::err_incompleteMemModelPragma] = "Incomplete memmodel pragma-directive found. Use '#pragma memmodel <model>'.";
+		notificationTexts[NT::err_unknownMemModelPragma] = "Unknown memory model defined in pragma. Use fast or large";
+		notificationTexts[NT::err_unknownPragma] = "Unknown pragma found.";
+		notificationTexts[NT::err_unknownDirective] = "Unknown preprocessor directive found.";
+		notificationTexts[NT::err_errorDirective] = "error directive";
+
+		notificationTexts[NT::err_reachedEOF_unfinishedExpression] = "Reached end of file with unfinished expression.";
+		notificationTexts[NT::err_unexpectedToken] = "Unexpectd token found. What did you tend to achive with this token?";
+		notificationTexts[NT::err_expectedIdentifier_atAllocation] = "An identifier was expected.";
+		notificationTexts[NT::err_expectedExprWithReturnValue_atAllocation] = "Expected expression or value at a variable allocation.";
+		notificationTexts[NT::err_expectedEqlSign_atAllocation] = "Expected '=' at allocation.";
+		notificationTexts[NT::err_expectedKnownLiteral] = "Expected known literal.";
+		notificationTexts[NT::err_variableAlreadyDefined] = "The variable identifier is already defined.";
+		notificationTexts[NT::err_undefinedIdentifier] = "The identifiern is not defined.";
+		notificationTexts[NT::err_noAllocationAfterVariableAttribute] = "Expected allocation after attribute keyword.";
+
+		notificationTexts[NT::err_unexpectedIdentifierAfterIdentifier] = "Unexpected identifier after identifier.";
+		notificationTexts[NT::err_expectedIdentifierBeforeOperator] = "Exptected Identifiern before operation.";
+		notificationTexts[NT::err_expectedIdentifierAfterOperator] = "Exptected Identifiern after operation.";
+		notificationTexts[NT::err_expectedExprWithReturnValue_atOperation] = "Expected expression or value as rValue at operation.";
+		notificationTexts[NT::err_unmatchingTypeFound_atTerm] = "Found unmatching type at Operation.";
+
+		notificationTexts[NT::err_cannotSetAConstantLiteral] = "Cannot set a constant literal. Did you mean '=='?";
+
+		notificationTexts[NT::warn_warningDirective] = "waring directive.";
+		notificationTexts[NT::warn_emptyDirective] = "Preprocessor directive is empty. You can safely remove this line.";
+		notificationTexts[NT::warn_undefinedIdentifiernAtUndefDirective] = "Undef directive used for undefined identifier.";
+
+		notificationTexts[NT::warn_toManyVariablesInFastRAM] = "To many variables were declared for fast memory. All other variables will be saved in normal memory.";
+
+		notificationTexts[NT::imp_operationOnTwoConstantsCanBePrevented] = "The operation is obsolete and could be replaced by a single contant.";
 	}
 
 	ExecutionResult BuilderTask::execute( std::map<String, std::list<String>> parameters, std::set<char> flags )
@@ -95,6 +137,10 @@ namespace nigel
 
 		printErrorLog( notificationList );
 		return executionResult;
+	}
+	void BuilderExecutable::generateNotification( NT error, std::shared_ptr<fs::path> path )
+	{
+		notificationList.push_back( std::make_shared<CompileNotification>( error, path ) );
 	}
 	void BuilderExecutable::generateNotification( NT error, std::shared_ptr<Token> token )
 	{

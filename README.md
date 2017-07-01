@@ -28,6 +28,14 @@ The Compiler is splitted in these parts:
           |
           v
 +--------------------+
+|    Preprocessor    |
++--------------------+
+          |
+          v
+    Line textcode
+          |
+          v
++--------------------+
 |       Lexer        |
 +--------------------+
           |

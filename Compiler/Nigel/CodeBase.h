@@ -16,11 +16,7 @@ namespace nigel
 		std::shared_ptr<fs::path> destFile;//Output if only one file handled at once.
 
 		//Flags
-		enum class MemModel
-		{
-			fast,
-			large
-		} memModel = MemModel::fast;
+		MemModel memModel = MemModel::large;
 		bool printLexer = false;
 		bool printAST = false;
 		bool printEIR = false;

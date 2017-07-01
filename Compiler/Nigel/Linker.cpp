@@ -9,11 +9,30 @@ namespace nigel
 	ExecutionResult Linker::onExecute( CodeBase &base )
 	{
 		{//Set address of values
-			u16 adr = 0;
-			for( auto v : base.eirValues )
+			u16 fastAdr = 0x20;
+			u16 largeAdr = 0;
+			bool onlyNormal = false;
+
+			for( auto &v : base.eirValues )
 			{
-				v.second->adress = adr;
-				adr += v.second->size/8;
+				if( v.second->model == MemModel::fast && !onlyNormal )
+				{
+					if( fastAdr > 0x7F )
+					{
+						generateNotification( NT::warn_toManyVariablesInFastRAM, base.srcFile );
+						onlyNormal = true;
+					}
+					else
+					{
+						v.second->adress = fastAdr;
+						fastAdr += v.second->size / 8;
+					}
+				}
+				if( v.second->model == MemModel::large || onlyNormal )
+				{
+					v.second->adress = largeAdr;
+					largeAdr += v.second->size / 8;
+				}
 			}
 		}
 
@@ -29,7 +48,14 @@ namespace nigel
 				}
 				else if( c->op1->type == EIR_Operator::Type::variable )
 				{//Write variable
-					base.hexBuffer.push_back( static_cast< u8 >( c->op1->as<EIR_Variable>()->adress ) );
+					auto op = c->op1->as<EIR_Variable>();
+					if( op->model == MemModel::fast )
+						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+					else if( op->model == MemModel::large )
+					{
+						base.hexBuffer.push_back( static_cast< u8 >( op->adress << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+					}
 				}
 			}
 			if( c->op2 != nullptr )
@@ -40,7 +66,14 @@ namespace nigel
 				}
 				else if( c->op2->type == EIR_Operator::Type::variable )
 				{//Write variable
-					base.hexBuffer.push_back( static_cast< u8 >( c->op2->as<EIR_Variable>()->adress ) );
+					auto op = c->op2->as<EIR_Variable>();
+					if( op->model == MemModel::fast )
+						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+					else if( op->model == MemModel::large )
+					{
+						base.hexBuffer.push_back( static_cast< u8 >( op->adress << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+					}
 				}
 			}
 		}

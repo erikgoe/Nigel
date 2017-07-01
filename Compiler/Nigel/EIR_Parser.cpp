@@ -55,6 +55,184 @@ namespace nigel
 		log( "EIR end" );
 	}
 
+	void EIR_Parser::generateSet( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> lValtoken )
+	{
+		if( comb == OC::vv )
+		{
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+				rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_adr_adr, rOp, lOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_dptr_a ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_adr_a, lOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_dptr_a ) );
+			}
+		}
+		else if( comb == OC::vc )
+		{
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_adr_const, lOp, rOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_dptr_a ) );
+			}
+		}
+		else if( comb == OC::vt )
+		{
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_adr_r0, lOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_r0 ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_dptr_a ) );
+			}
+		}
+		else generateNotification( NT::err_cannotSetAConstantLiteral, lValtoken );
+	}
+
+	void EIR_Parser::generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, HexOp op_r0, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token )
+	{
+		if( comb == OC::vv )
+		{
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+				rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
+				base->eirCommands.push_back( generateCmd( op_val, rOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( op_val, rOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
+				base->eirCommands.push_back( generateCmd( op_r0 ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( op_r0 ) );
+			}
+		}
+		else if( comb == OC::vc )
+		{
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
+				base->eirCommands.push_back( generateCmd( op_const, rOp ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( op_const, rOp ) );
+			}
+		}
+		else if( comb == OC::vt )
+		{
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
+				base->eirCommands.push_back( generateCmd( op_r0 ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( op_r0 ) );
+			}
+		}
+		else if( comb == OC::cv )
+		{
+			if( rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( op_val, rOp ) );
+			}
+			else if( rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+				base->eirCommands.push_back( generateCmd( op_r0 ) );
+			}
+		}
+		else if( comb == OC::cc )
+		{
+			generateNotification( NT::imp_operationOnTwoConstantsCanBePrevented, token );
+			base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+			base->eirCommands.push_back( generateCmd( op_const, rOp ) );
+		}
+		else if( comb == OC::ct )
+		{
+			base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+			base->eirCommands.push_back( generateCmd( op_r0 ) );
+		}
+		else if( comb == OC::tv )
+		{
+			if( rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				base->eirCommands.push_back( generateCmd( op_val, rOp ) );
+			}
+			else if( rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_dptr_const, rOp ) );
+				base->eirCommands.push_back( generateCmd( HexOp::movx_a_dptr ) );
+				base->eirCommands.push_back( generateCmd( HexOp::xch_a_r0 ) );
+				base->eirCommands.push_back( generateCmd( op_r0 ) );
+			}
+		}
+		else if( comb == OC::tc )
+		{
+			base->eirCommands.push_back( generateCmd( op_const, rOp ) );
+		}
+		else if( comb == OC::tt )
+		{
+			base->eirCommands.push_back( generateCmd( op_r0 ) );
+		}
+	}
+
 	EIR_Parser::EIR_Parser()
 	{
 	}
@@ -63,16 +241,17 @@ namespace nigel
 		this->base = &base;
 		std::map<String, std::shared_ptr<EIR_Variable>> varList;
 
-		for( auto v : base.globalAst->variables )
+		for( auto &v : base.globalAst->variables )
 		{//Add all list of the global block.
 			varList[v.first] = EIR_Variable::getNew(
 				v.second->retType == BasicType::tByte ? 8 :
 				v.second->retType == BasicType::tInt ? 16 :
 				v.second->retType == BasicType::tUbyte ? 8 :
 				v.second->retType == BasicType::tUint ? 16 : 0 );
+			varList[v.first]->model = v.second->model;
 			base.eirValues[varList[v.first]->id] = varList[v.first];
 		}
-		for( auto a : base.globalAst->content )
+		for( auto &a : base.globalAst->content )
 		{//Iterate the global ast.
 			parseAst( a, varList );
 		}
@@ -118,6 +297,14 @@ namespace nigel
 			std::shared_ptr<EIR_Operator> lOp;
 			std::shared_ptr<EIR_Operator> rOp;
 
+			//Memorize rVal
+			if( a->rVal->type == AstExpr::Type::variable ) rOp = varList[a->rVal->as<AstVariable>()->name];
+			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
+			else if( a->rVal->type == AstExpr::Type::term )
+			{
+				parseAst( a->rVal, varList );
+				base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+			}
 			//Check lValue and combination
 			if( a->lVal->type == AstExpr::Type::variable )
 			{//lValue is a variable
@@ -138,55 +325,23 @@ namespace nigel
 				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
-				else if( a->rVal->type == AstExpr::Type::term )
-				{//Move result from a to r0 to prevent overriding.
-					comb = OC::tt;
-					base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
-				}
+				else if( a->rVal->type == AstExpr::Type::term ) comb = OC::tt;
 			}
-			//Memorize rVal
-			if( a->rVal->type == AstExpr::Type::variable ) rOp = varList[a->rVal->as<AstVariable>()->name];
-			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
-			else if( a->rVal->type == AstExpr::Type::term ) parseAst( a->rVal, varList );
 
 
 
 			//Handle operation
 			if( a->op == Token::Type::op_set )
 			{// =
-				if( comb == OC::vv ) base->eirCommands.push_back( generateCmd( HexOp::mov_adr_adr, lOp, rOp ) );
-				else if( comb == OC::vc ) base->eirCommands.push_back( generateCmd( HexOp::mov_adr_const, lOp, rOp ) );
-				else if( comb == OC::vt ) base->eirCommands.push_back( generateCmd( HexOp::mov_adr_a, lOp ) );
-				else generateNotification( NT::err_cannotSetAConstantLiteral, a->lVal->token );
+				generateSet( comb, lOp, rOp, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_add )
 			{// +
-				if( comb == OC::vv )
-				{
-					base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
-					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
-				}
-				else if( comb == OC::vc )
-				{
-					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, rOp ) );
-					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
-				}
-				else if( comb == OC::vt ) base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
-				else if( comb == OC::cv )
-				{
-					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
-					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
-				}
-				else if( comb == OC::cc )
-				{
-					generateNotification( NT::imp_addingTwoConstantsCanBePrevented, a->token );
-					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
-					base->eirCommands.push_back( generateCmd( HexOp::add_a_const, rOp ) );
-				}
-				else if( comb == OC::ct ) base->eirCommands.push_back( generateCmd( HexOp::add_a_const, lOp ) );
-				else if( comb == OC::tv ) base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
-				else if( comb == OC::tc ) base->eirCommands.push_back( generateCmd( HexOp::add_a_const, rOp ) );
-				else if( comb == OC::tt ) base->eirCommands.push_back( generateCmd( HexOp::add_a_r0 ) );
+				generateOperation( comb, HexOp::add_a_adr, HexOp::add_a_const, HexOp::add_a_r0, lOp, rOp, a->token );
+			}
+			else if( a->op == Token::Type::op_sub )
+			{// -
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_r0, lOp, rOp, a->token );
 			}
 		}
 	}

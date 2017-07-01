@@ -30,13 +30,14 @@ namespace nigel
 			err_errorDirective,
 
 			err_reachedEOF_unfinishedExpression,
-			err_unexpectedToken,//What did you tend to achive with this token?
+			err_unexpectedToken,
 			err_expectedIdentifier_atAllocation,
 			err_expectedExprWithReturnValue_atAllocation,
 			err_expectedEqlSign_atAllocation,
 			err_expectedKnownLiteral,
 			err_variableAlreadyDefined,
 			err_undefinedIdentifier,
+			err_noAllocationAfterVariableAttribute,
 
 			err_unexpectedIdentifierAfterIdentifier,
 			err_expectedIdentifierBeforeOperator,
@@ -44,15 +45,19 @@ namespace nigel
 			err_expectedExprWithReturnValue_atOperation,
 			err_unmatchingTypeFound_atTerm,
 
-			err_cannotSetAConstantLiteral,//Did you mean "==" ?
+			err_cannotSetAConstantLiteral,
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 
+			warn_warningDirective,
 			warn_emptyDirective,
+			warn_undefinedIdentifiernAtUndefDirective,
+
+			warn_toManyVariablesInFastRAM,
 
 			begin_improvements = 0xffff,//All improvement notifications will start at this position.
 
-			imp_addingTwoConstantsCanBePrevented,
+			imp_operationOnTwoConstantsCanBePrevented,
 
 			count
 		} type;
@@ -69,6 +74,10 @@ namespace nigel
 			return static_cast< u64 >( type );
 		}
 
+		CompileNotification( Type type, std::shared_ptr<fs::path> path )
+			: CompileNotification::type( type ), CompileNotification::token( nullptr ), CompileNotification::line( 0 ), CompileNotification::lineText( nullptr ), CompileNotification::file( path )
+		{
+		}
 		CompileNotification( Type type, std::shared_ptr<Token> token )
 			: CompileNotification::type(type), CompileNotification::token(token), CompileNotification::line(token->lineNo), CompileNotification::lineText(token->line), CompileNotification::file(token->path)
 		{

@@ -8,15 +8,27 @@ namespace nigel
 		//Operations in Hex
 	enum class HexOp
 	{
+		nop = 0x00,
+
 		clr_a = 0xE4,
 
 		mov_a_const = 0x74,
 		mov_adr_const = 0x75,
 		mov_a_adr = 0xE5,
 		mov_adr_a = 0xF5,
-		mov_adr_adr = 0x85,
+		mov_adr_adr = 0x85,//rVal and lVal are reverse ordered
 		mov_r0_a = 0xF8,
+		mov_r0_const = 0x78,
+		mov_r0_adr = 0xA8,
 		mov_a_r0 = 0xE8,
+		mov_adr_r0 = 0x88,
+		mov_dptr_const = 0x90,
+		movx_a_dptr = 0xE0,
+		movx_dptr_a = 0xF0,
+
+		xch_a_r0 = 0xC8,
+		xch_r0_a = 0xC8,
+		xch_a_adr = 0xC5,
 
 		add_a_const = 0x24,
 		add_a_adr = 0x25,
@@ -59,6 +71,7 @@ namespace nigel
 		static u32 nextID;//Enables creation of new variables.
 
 	public:
+		MemModel model = MemModel::large;
 		u32 id = 0;//Unique id of this variable
 		u16 adress = 0;//Adress in ram, where to store the variable
 		u8 size = 8;//Size of this variable in bits

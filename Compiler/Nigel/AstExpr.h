@@ -63,6 +63,14 @@ namespace nigel
 
 		count
 	};
+		//Defines where a variable will be saved.
+	enum class MemModel
+	{
+		fast,
+		large,
+
+		count
+	};
 
 		//Base class for a expression with a return value
 	class AstReturning : public AstExpr
@@ -87,6 +95,7 @@ namespace nigel
 	class AstVariable : public AstReturning
 	{
 	public:
+		MemModel model = MemModel::large;
 		String name;
 
 		AstVariable() : AstReturning( AstExpr::Type::variable ) {}
