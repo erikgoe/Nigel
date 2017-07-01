@@ -46,10 +46,10 @@ namespace nigel
 		}
 
 		//Add infinite loop
-		base.hexBuffer.push_back( 80 );
+		base.hexBuffer.push_back( 128 );
 		base.hexBuffer.push_back( 254 );
 
-		printToFile( base.hexBuffer, base.destFile );
+		printToFile( base.hexBuffer, *base.destFile );
 
 		return ExecutionResult::success;
 	}

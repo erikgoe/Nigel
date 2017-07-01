@@ -91,7 +91,8 @@ namespace nigel
 
 		size_t lineNo = 0;//Line in the code file
 		size_t columnNo = 0;//Column in the code file
-
+		std::shared_ptr<String> line;//Line of code (as text)
+		std::shared_ptr<fs::path> path;//Path of the file
 
 
 		Token( Type type )

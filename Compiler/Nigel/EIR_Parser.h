@@ -14,12 +14,8 @@ namespace nigel
 
 		CodeBase *base;
 
-		std::list<std::shared_ptr<CompileNotification>> notificationList;
-
 		//Writes the EIR into the console.
 		void printEIR( CodeBase &base );
-
-		void generateNotification( NT error, std::shared_ptr<Token> token );
 
 	public:
 		enum class OperationCombination

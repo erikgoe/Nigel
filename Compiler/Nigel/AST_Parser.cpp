@@ -5,11 +5,6 @@ namespace nigel
 {
 	using TT = Token::Type;
 
-	void AST_Parser::generateNotification( NT error, std::shared_ptr<Token> token )
-	{
-		notificationList.push_back( std::make_shared<CompileNotification>( error, token, base->srcFile ) );
-	}
-
 	std::shared_ptr<Token> AST_Parser::next()
 	{
 		if( currItr == base->lexerStruct.end() ) {
@@ -140,41 +135,17 @@ namespace nigel
 			//if( expr != nullptr ) base.globalAst->content.push_back( expr );
 		}
 
-		{//Print notifications
-			size_t errorCount = 0, warningCount = 0, notificationCount = 0;
-
-			for( auto &n : notificationList )
-			{
-				if( n->type > NT::begin_err && n->type < NT::begin_warning )
-				{//error
-					log( "Error: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Error );
-					errorCount++;
-				}
-				else if( n->type > NT::begin_warning && n->type < NT::begin_improvements )
-				{//warning
-					log( "Warning: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Warning );
-					warningCount++;
-				}
-				else if( n->type > NT::begin_improvements && n->type < NT::count )
-				{//notification
-					log( "Notification: " + to_string( n->getCode() ) + " at token '" + n->token->toString() + "' in line " + to_string( n->token->lineNo ) + " column " + to_string( n->token->columnNo ) + ".", LogLevel::Information );
-					notificationCount++;
-				}
-			}
-			if( errorCount > 0 )
-			{
-				log( "FAILED " + to_string( errorCount ) + (errorCount>1?" ERRORS": " ERROR")+" OCCURRED! " + to_string( warningCount ) + " warnings occurred. " + to_string( notificationCount ) + " improvements available." );
-				_getch();
-				return ExecutionResult::astParsingFailed;
-			}
-			else if( warningCount > 0 || notificationCount > 0 )
-			{
-				log( "Finshed with " + to_string( errorCount ) + " errors, " + to_string( warningCount ) + ( warningCount==1 ? " warning" : " warnings" ) + " and " + to_string( notificationCount ) + ( warningCount == 1 ? " improvement" : " improvements" ) + "." );
-			}
+		bool hasError = false;
+		for( auto &n : notificationList ) if( n->type > NT::begin_err && n->type < NT::begin_warning )
+		{
+			hasError = true;
+			break;
 		}
 
-		printAST( base );
-		return ExecutionResult::success;
+		if( base.printAST ) printAST( base );
+
+		if( hasError ) return ExecutionResult::astParsingFailed;
+		else return ExecutionResult::success;
 	}
 	std::shared_ptr<AstExpr> AST_Parser::resolveNextExpr()
 	{
