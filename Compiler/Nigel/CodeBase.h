@@ -12,12 +12,30 @@ namespace nigel
 	{
 	public:
 		//Instructions
-		fs::path srcFile;//Input if only one file handled at once.
-		fs::path destFile;//Output if only one file handled at once.
+		std::shared_ptr<fs::path> srcFile;//Input if only one file handled at once.
+		std::shared_ptr<fs::path> destFile;//Output if only one file handled at once.
 
+		//Flags
+		enum class MemModel
+		{
+			fast,
+			large
+		} memModel = MemModel::fast;
+		bool printLexer = false;
+		bool printAST = false;
+		bool printEIR = false;
 
 		//Generated data
-		String fileCont;//Content from the pre-processed file
+		class LineContent
+		{
+		public:
+			std::shared_ptr<String> content;
+			std::shared_ptr<fs::path> path;
+			size_t line;
+			LineContent() {}
+			LineContent( std::shared_ptr<String> content, std::shared_ptr<fs::path> path, size_t line ) : LineContent::content( content ), LineContent::path( path ), LineContent::line( line ) {}
+		};
+		std::vector<LineContent> fileCont;//Content from the pre-processed file, seperated in lines (content-lineNr-pairs)
 
 		std::list<std::shared_ptr<Token>> lexerStruct;//List of tokens
 		

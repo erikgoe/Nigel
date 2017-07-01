@@ -3,7 +3,7 @@
 //#include "numbers.nig"
 
 #define NULL
-#define STD
+//#define STD
 
 byte a = 2;
 byte b = 5;

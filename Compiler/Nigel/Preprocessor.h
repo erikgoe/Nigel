@@ -7,12 +7,13 @@ namespace nigel
 {
 	class Preprocessor : public BuilderExecutable
 	{
+
 	public:
 		Preprocessor();
 
 		ExecutionResult onExecute( CodeBase &base ) override;
 
-		void processFile( fs::path path, String &result, std::map<String, String> &definitions, size_t &ifdefCount, bool &ignoreifdef, size_t &posAtIgnore );
+		void processFile( CodeBase &base, std::shared_ptr<fs::path> path, std::vector<CodeBase::LineContent> &result, std::map<String, String> &definitions, size_t &ifdefCount, bool &ignoreifdef, size_t &posAtIgnore );
 	};
 }
 
