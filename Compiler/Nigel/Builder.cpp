@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Builder.h"
 
+#include "Preprocessor.h"
 #include "Lexer.h"
 #include "AST_Parser.h"
 #include "EIR_Parser.h"
@@ -17,16 +18,18 @@ namespace nigel
 	{
 		{//Lexer
 			std::list<std::shared_ptr<BuilderExecutable>> e;
+			e.push_back( std::make_shared<Preprocessor>() );
 			e.push_back( std::make_shared<Lexer>() );
-			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "lexer -c [sourcePath] -o [destinationPath]", e );
+			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "lexer [--pl] --c [sourcePath] --o [destinationPath]", e );
 		}
 		{//Builder
 			std::list<std::shared_ptr<BuilderExecutable>> e;
+			e.push_back( std::make_shared<Preprocessor>() );
 			e.push_back( std::make_shared<Lexer>() );
 			e.push_back( std::make_shared<AST_Parser>() );
 			e.push_back( std::make_shared<EIR_Parser>() );
 			e.push_back( std::make_shared<Linker>() );
-			builderTasks["build"] = std::make_shared<BuilderTask>( "Builder", "Creates a hex file from a soucecode file.", "build -c [sourcePath] -o [destinationPath]", e );
+			builderTasks["build"] = std::make_shared<BuilderTask>( "Builder", "Creates a hex file from a soucecode file.", "build [--pl] [--pa] [--pe] --c [sourcePath] --o [destinationPath]", e );
 		}
 	}
 
@@ -107,6 +110,9 @@ namespace nigel
 
 					log( "   sourcePath             Path to the source file." );
 					log( "   destinationPath        File to write to." );
+					log( "   pl                     Print lexer structure." );
+					log( "   pa                     Print AST." );
+					log( "   pe                     Print EIR." );
 				}
 			}
 		}
@@ -117,10 +123,10 @@ namespace nigel
 		else if( builderTasks.find( operation ) != builderTasks.end() )
 		{//Execute other operation. Found operation.
 			ExecutionResult result;
-			try
-			{
-				result = builderTasks.find( operation )->second->execute( args );
-			}
+			/*try //todo uncomment
+			{*/
+				result = builderTasks.find( operation )->second->execute( args, flags );
+			/*}
 			catch( std::exception &e )
 			{
 				log( "An internel compiler error occourred: " + String( e.what() ), LogLevel::Error );
@@ -130,10 +136,11 @@ namespace nigel
 			{
 				log( "An unknown internel compiler error occourred!", LogLevel::Error );
 				result = ExecutionResult::unknownInternalError;
-			}
+			}*/
 			if( result != ExecutionResult::success )
 			{//Panic
 				log( "An error occurred while processing '" + operation + "'", LogLevel::Error );
+				_getch();//todo remove
 				return static_cast< int >( result );
 			}
 		}

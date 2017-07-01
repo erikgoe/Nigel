@@ -46,10 +46,10 @@ namespace nigel
 		}
 
 		//Add infinite loop
-		base.hexBuffer.push_back( 80 );
+		base.hexBuffer.push_back( 128 );
 		base.hexBuffer.push_back( 254 );
 
-		printToFile( base.hexBuffer, base.destFile );
+		printToFile( base.hexBuffer, *base.destFile );
 
 		return ExecutionResult::success;
 	}
@@ -72,7 +72,7 @@ namespace nigel
 				out = "";
 			}
 		}
-		if( out.size() >= 0 )
+		if( out.size() > 0 )
 		{
 			fileStr += ":" + int_to_hex( static_cast< u8 >( out.size() / 2 ) ) + int_to_hex( startAddr ) + "00" + out + int_to_hex( static_cast< u8 >( ~( checksum % 256 )+1 ) ) + "\r\n";
 		}

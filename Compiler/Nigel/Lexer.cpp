@@ -28,6 +28,14 @@ namespace nigel
 	{
 		return !isWhitespace( c ) && !isOperator( c ) && !isNumber( c ) && !isDividingToken( c );
 	}
+	std::shared_ptr<Token> Lexer::makeToken( std::shared_ptr<Token> token )
+	{
+		token->lineNo = currLineNo;
+		token->columnNo = ( currLineNo == previousLineNo ? previousColumnNo : 1 );
+		token->line = currLine;
+		token->path = currPath;
+		return token;
+	}
 	void Lexer::adoptToken( String &str, CodeBase &base )
 	{
 		if( !str.empty() && !isWhitespace( str.front() ) )
@@ -35,23 +43,21 @@ namespace nigel
 			std::shared_ptr<Token> token;
 			if( isOperator( str.front() ) )
 			{
-				token = std::make_shared<Token_Operator>( str );
+				token = makeToken( std::make_shared<Token_Operator>( str ) );
 			}
 			else if( isNumber( str.front() ) )
 			{
-				token = std::make_shared<Token_NumberL>( stoi( str ) );
+				token = makeToken( std::make_shared<Token_NumberL>( stoi( str ) ) );
 			}
 			else if( isDividingToken( str.front() ) )
 			{
-				token = std::make_shared<Token_DividingToken>( str.front() );
+				token = makeToken( std::make_shared<Token_DividingToken>( str.front() ) );
 			}
 			else
 			{
-				token = std::make_shared<Token_Identifier>( str );
+				token = makeToken( std::make_shared<Token_Identifier>( str ) );
 			}
 
-			token->lineNo = currLineNo;
-			token->columnNo = ( currLineNo == previousLineNo ? previousColumnNo : 1 );
 			base.lexerStruct.push_back( token );
 			previousLineNo = currLineNo;
 			previousColumnNo = currColumnNo;
@@ -73,7 +79,9 @@ namespace nigel
 
 	ExecutionResult Lexer::onExecute( CodeBase &base )
 	{
-		std::basic_ifstream<u8> filestream( base.srcFile.string(), std::ios_base::binary );
+		size_t fileLine = 0;
+		//size_t fileColumn = 0;
+
 		u8 c, previousC = 0;
 		String tmpStr;
 		bool finish = false;
@@ -81,28 +89,37 @@ namespace nigel
 		currColumnNo = 0;
 
 		//Special values
-		bool isNewline = false;//To enable lastWasNewline
-		bool lastWasNewline = true;//Will be set true, if previous char was a newline. Default is true, because the first line will be handled as newline.
-		bool isPP = false;//If is preprocessor directive
 		bool isString = false;//If is string literal
 		bool isLineComment = false;//If is comment from // untile lineend
 		bool isMultiComment = false;//If is multiline-comment with /* */
 		int multiCommentCount = 0;//Enables nested comments
 
-		if( filestream ) while( !finish )
+		while( !finish )
 		{//Iterate whole file content
-			filestream.get( c );
-			if( !filestream.good() )
+			while( fileLine < base.fileCont.size() && currColumnNo >= base.fileCont[fileLine].content->size() )
+			{//Newline
+				if( isLineComment )
+				{
+					base.lexerStruct.push_back( makeToken( std::make_shared<Token_Comment>( tmpStr ) ) );
+					tmpStr.clear();
+					isLineComment = false;
+				}
+				currColumnNo = 0;
+				fileLine++;
+				if( fileLine < base.fileCont.size() )
+				{
+					currLineNo = base.fileCont[fileLine].line;
+					currLine = base.fileCont[fileLine].content;
+					currPath = base.fileCont[fileLine].path;
+				}
+			}
+			if( fileLine >= base.fileCont.size() )
 			{
 				finish = true;
 				c = 0;
 			}
-			if( previousC == '\r' || c == '\n' )
-			{//A newline
-				currColumnNo = 0;
-				currLineNo++;
-			}
-			if( previousC != '\r' || c != '\n' ) currColumnNo++;
+			else c = base.fileCont[fileLine].content->at( currColumnNo++ );
+
 
 			if( isString && c != '"' )
 			{//Capture string literal
@@ -111,15 +128,6 @@ namespace nigel
 			else if( isLineComment )
 			{//Capture comment
 				tmpStr += c;
-				if( previousC == '\r' || c == '\n' )
-				{//Comment finished
-					if( previousC == '\r' ) tmpStr.pop_back();//Remove carriage return
-					tmpStr.pop_back();//Remove newline
-
-					base.lexerStruct.push_back( std::make_shared<Token_Comment>( tmpStr ) );
-					tmpStr.clear();
-					isLineComment = false;
-				}
 			}
 			else if( isMultiComment )
 			{//Capture comment
@@ -132,7 +140,7 @@ namespace nigel
 						tmpStr.pop_back();//Remove *
 						tmpStr.pop_back();//Remove /
 
-						base.lexerStruct.push_back( std::make_shared<Token_Comment>( tmpStr ) );
+						base.lexerStruct.push_back( makeToken( std::make_shared<Token_Comment>( tmpStr ) ) );
 						tmpStr.clear();
 						isMultiComment = false;
 					}
@@ -143,15 +151,6 @@ namespace nigel
 
 			else if( isWhitespace( c ) )
 			{//Ignore and split token
-				if( previousC == '\r' || c == '\n' )
-				{ //Add eol for preprocessor
-					if( isPP )
-					{
-						base.lexerStruct.push_back( std::make_shared<Token>( Token::Type::ppEnd ) );
-						isPP = false;
-					}
-					isNewline = true;
-				}
 				if( !tmpStr.empty() )
 				{//Finish previous token
 					adoptToken( tmpStr, base );
@@ -190,12 +189,11 @@ namespace nigel
 			}
 			else if( isDividingToken( c ) && !isDividingToken( previousC ) )
 			{
-				if( c == '#' && lastWasNewline ) isPP = true;//Line is PP
 				if( c == '"' )
 				{
 					if( isString )
 					{//Admit string
-						base.lexerStruct.push_back( std::make_shared<Token_StringL>( tmpStr ) );
+						base.lexerStruct.push_back( makeToken( std::make_shared<Token_StringL>( tmpStr ) ) );
 						tmpStr.clear();
 						isString = false;
 					}
@@ -223,20 +221,12 @@ namespace nigel
 			}
 
 			previousC = c;
-
-			//Reset newline stuff
-			if( isNewline )
-			{
-				lastWasNewline = true;
-				isNewline = false;
-			}
-			else lastWasNewline = false;
 		}
-		base.lexerStruct.push_back( std::make_shared<Token>( Token::Type::eof ) );
+		base.lexerStruct.push_back( makeToken( std::make_shared<Token>( Token::Type::eof ) ) );
 
 		postLexer( base );
 
-		printLexerStructure( base );
+		if( base.printLexer ) printLexerStructure( base );
 
 		return ExecutionResult::success;
 	}
@@ -579,6 +569,8 @@ namespace nigel
 			{//Move also metadata. Use inverted order because of swap
 				( *token )->lineNo = tmp->lineNo;
 				( *token )->columnNo = tmp->columnNo;
+				( *token )->line = tmp->line;
+				( *token )->path = tmp->path;
 			}
 			tmp = nullptr;
 		}

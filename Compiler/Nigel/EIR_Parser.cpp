@@ -77,9 +77,18 @@ namespace nigel
 			parseAst( a, varList );
 		}
 
-		printEIR( base );
+		bool hasError = false;
+		for( auto &n : notificationList ) if( n->type > NT::begin_err && n->type < NT::begin_warning )
+		{
+			hasError = true;
+			break;
+		}
 
-		return ExecutionResult::success;
+
+		if( base.printEIR ) printEIR( base );
+
+		if( hasError ) return ExecutionResult::eirParsingFailed;
+		else return ExecutionResult::success;
 	}
 	void EIR_Parser::parseAst( std::shared_ptr<AstExpr> ast, std::map<String, std::shared_ptr<EIR_Variable>> varList )
 	{
@@ -126,15 +135,20 @@ namespace nigel
 			}
 			else if( a->lVal->type == AstExpr::Type::term )
 			{//lValue is a term
-				//todo
+				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
-				else if( a->rVal->type == AstExpr::Type::term ) comb = OC::tt;
+				else if( a->rVal->type == AstExpr::Type::term )
+				{//Move result from a to r0 to prevent overriding.
+					comb = OC::tt;
+					base->eirCommands.push_back( generateCmd( HexOp::mov_r0_a ) );
+				}
 			}
-			//Check rValue again
+			//Memorize rVal
 			if( a->rVal->type == AstExpr::Type::variable ) rOp = varList[a->rVal->as<AstVariable>()->name];
 			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
-			else if( a->rVal->type == AstExpr::Type::term );//todo
+			else if( a->rVal->type == AstExpr::Type::term ) parseAst( a->rVal, varList );
+
 
 
 			//Handle operation
@@ -142,11 +156,8 @@ namespace nigel
 			{// =
 				if( comb == OC::vv ) base->eirCommands.push_back( generateCmd( HexOp::mov_adr_adr, lOp, rOp ) );
 				else if( comb == OC::vc ) base->eirCommands.push_back( generateCmd( HexOp::mov_adr_const, lOp, rOp ) );
-				else if( comb == OC::vt )
-				{
-					parseAst( a->rVal, varList );
-					base->eirCommands.push_back( generateCmd( HexOp::mov_adr_a, lOp ) );
-				}
+				else if( comb == OC::vt ) base->eirCommands.push_back( generateCmd( HexOp::mov_adr_a, lOp ) );
+				else generateNotification( NT::err_cannotSetAConstantLiteral, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_add )
 			{// +
@@ -155,16 +166,27 @@ namespace nigel
 					base->eirCommands.push_back( generateCmd( HexOp::mov_a_adr, lOp ) );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
 				}
-				else if( comb == OC::vt )
+				else if( comb == OC::vc )
 				{
-					parseAst( a->rVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, rOp ) );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
 				}
-				else if( comb == OC::tv )
+				else if( comb == OC::vt ) base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, lOp ) );
+				else if( comb == OC::cv )
 				{
-					parseAst( a->lVal, varList );
+					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
 					base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
 				}
+				else if( comb == OC::cc )
+				{
+					generateNotification( NT::imp_addingTwoConstantsCanBePrevented, a->token );
+					base->eirCommands.push_back( generateCmd( HexOp::mov_a_const, lOp ) );
+					base->eirCommands.push_back( generateCmd( HexOp::add_a_const, rOp ) );
+				}
+				else if( comb == OC::ct ) base->eirCommands.push_back( generateCmd( HexOp::add_a_const, lOp ) );
+				else if( comb == OC::tv ) base->eirCommands.push_back( generateCmd( HexOp::add_a_adr, rOp ) );
+				else if( comb == OC::tc ) base->eirCommands.push_back( generateCmd( HexOp::add_a_const, rOp ) );
+				else if( comb == OC::tt ) base->eirCommands.push_back( generateCmd( HexOp::add_a_r0 ) );
 			}
 		}
 	}

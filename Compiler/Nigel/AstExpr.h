@@ -24,6 +24,8 @@ namespace nigel
 			count
 		} type;
 
+		std::shared_ptr<Token> token;//Main ast-token
+
 		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::literal || type == Type::functionCall; }
 
 		AstExpr( Type type ) : AstExpr::type(type) { }

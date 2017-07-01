@@ -1,0 +1,20 @@
+#define byte bla
+#undef byte
+//#include "numbers.nig"
+
+#define NULL
+//#define STD
+
+byte a = 2;
+byte b = 5;
+#ifdef NULL
+	#ifdef STD
+	byte c;
+	#elseif
+	byte c1;
+	#endif
+#elseif
+byte c2;
+#endif
+byte d;
+d = a + b + 1;

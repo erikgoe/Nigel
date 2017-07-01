@@ -2,15 +2,17 @@
 #define NIGEL_EIR_PARSER_H
 
 #include "BuilderTask.h"
+#include "CompileNotification.h"
 
 namespace nigel
 {
+	using NT = CompileNotification::Type;
+
 		//Parser to translate the AST into the Early Instruction Representation (EIR).
 	class EIR_Parser : public BuilderExecutable
 	{
 
 		CodeBase *base;
-
 
 		//Writes the EIR into the console.
 		void printEIR( CodeBase &base );
