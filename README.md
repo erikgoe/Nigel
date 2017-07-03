@@ -11,6 +11,8 @@ Nigel is a new programming language for the 8051 microcontroller, with a c-like 
 * Functions (of course with a stack)
 * Controll flow (if, while, etc.)
 * Pointers (including dynamic heap)
+* arrays
+* string literals?
 * Handling interrupts/timer and other 8051-specific stuff
 * Intern/extern RAM
 * 16+ bit types
@@ -69,17 +71,20 @@ The Compiler is splitted in these parts:
 The resulting Hex code can be burned onto a 8051 microcontroller or be interpreted in a simulator.
 
 ## Current state
+- [x] Preprocessor
 - [x] Compiler structure
 - [x] Lexer
-- [ ] AST Parser
-- [ ] EIR Parser
-- [ ] Linker
+- [x] AST Parser
+- [x] EIR Parser
+- [x] Linker
 
 ### Next development steps
-* Resolving of arithmetic terms
-* Addressing the variables properly (ext. RAM)
-* Add Preprocessor power
+* Resolving of arithmetic terms + '()'
+* Blocks
+* Controll flow
 * 16+ types
+* ptr
+* 'Magic addresses' of the microcontroller (ports, etc.)
 
 ## Installation
 1. Install Visual Studio (tested with VC 2017).

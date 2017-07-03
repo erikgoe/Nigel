@@ -26,6 +26,9 @@ namespace nigel
 		//Determine the token type and write it to the codebase.
 		void adoptToken( String &str, CodeBase &base );
 
+		//Splits a token into two
+		void splitToken( String &identifier, size_t index, std::list<std::shared_ptr<Token>>::iterator &token, std::list<std::shared_ptr<Token>> &lexerStruct );
+
 		//Writes the lexer structure into the console.
 		void printLexerStructure( CodeBase &base );
 	public:

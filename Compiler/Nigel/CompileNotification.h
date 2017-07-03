@@ -46,6 +46,7 @@ namespace nigel
 			err_unmatchingTypeFound_atTerm,
 
 			err_cannotSetAConstantLiteral,
+			err_onlyConstantsAreAllowedForBitShifts,
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 
@@ -58,6 +59,7 @@ namespace nigel
 			begin_improvements = 0xffff,//All improvement notifications will start at this position.
 
 			imp_operationOnTwoConstantsCanBePrevented,
+			imp_operationOnConstantCanBePrevented,
 
 			count
 		} type;

@@ -46,7 +46,8 @@ namespace nigel
 			if( n->token != nullptr )
 			{
 				for( size_t i = 1 ; i < n->token->columnNo ; i++ ) outStr += ' ';
-				for( size_t i = 0 ; i < n->token->toString().size() ; i++ ) outStr += '^';
+				if( n->token->toString() == "-!-UNKNOWN-!-" ) outStr += '^';
+				else for( size_t i = 0 ; i < n->token->toString().size() ; i++ ) outStr += '^';
 			}
 
 			log( outStr, level );
@@ -99,7 +100,8 @@ namespace nigel
 		notificationTexts[NT::err_expectedExprWithReturnValue_atOperation] = "Expected expression or value as rValue at operation.";
 		notificationTexts[NT::err_unmatchingTypeFound_atTerm] = "Found unmatching type at Operation.";
 
-		notificationTexts[NT::err_cannotSetAConstantLiteral] = "Cannot set a constant literal. Did you mean '=='?";
+		notificationTexts[NT::err_cannotSetAConstantLiteral] = "Cannot set a constant literal or term. Did you mean '=='?";
+		notificationTexts[NT::err_onlyConstantsAreAllowedForBitShifts] = "Only positive constants are allowed for binary shifts, due to processor limitations.";
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";
 		notificationTexts[NT::warn_emptyDirective] = "Preprocessor directive is empty. You can safely remove this line.";
@@ -107,7 +109,8 @@ namespace nigel
 
 		notificationTexts[NT::warn_toManyVariablesInFastRAM] = "To many variables were declared for fast memory. All other variables will be saved in normal memory.";
 
-		notificationTexts[NT::imp_operationOnTwoConstantsCanBePrevented] = "The operation is obsolete and could be replaced by a single contant.";
+		notificationTexts[NT::imp_operationOnTwoConstantsCanBePrevented] = "The operation is obsolete and could be replaced by a single constant.";
+		notificationTexts[NT::imp_operationOnConstantCanBePrevented] = "The operation is obsolete and could be replaced by a single constant.";
 	}
 
 	ExecutionResult BuilderTask::execute( std::map<String, std::list<String>> parameters, std::set<char> flags )

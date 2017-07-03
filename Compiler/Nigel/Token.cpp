@@ -53,6 +53,8 @@ namespace nigel
 		else if( type == Token::Type::op_xor ) return "^";
 		else if( type == Token::Type::op_xor_set ) return "^=";
 		else if( type == Token::Type::op_inv ) return "~";
+		else if( type == Token::Type::op_inc ) return "++";
+		else if( type == Token::Type::op_dec ) return "--";
 		else if( type == Token::Type::dividingToken ) return String( 1, as<Token_DividingToken>()->token ) + ( extended ? "\t\tas unknown divider token" : "" );
 		else if( type == Token::Type::tok_dollar ) return "$";
 		else if( type == Token::Type::tok_hash ) return "#";

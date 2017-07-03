@@ -64,6 +64,25 @@ namespace nigel
 		}
 		str.clear();
 	}
+	void Lexer::splitToken( String &identifier, size_t index, std::list<std::shared_ptr<Token>>::iterator &token, std::list<std::shared_ptr<Token>> &lexerStruct )
+	{
+		std::shared_ptr<Token> tmp1 = std::make_shared<Token_Operator>( identifier.substr( 0, index ) );
+		std::shared_ptr<Token> tmp2 = std::make_shared<Token_Operator>( identifier.substr( index ) );
+
+		tmp1->columnNo = ( *token )->columnNo;
+		tmp1->lineNo = ( *token )->lineNo;
+		tmp1->line = ( *token )->line;
+		tmp1->path = ( *token )->path;
+		tmp2->columnNo = ( *token )->columnNo + index;
+		tmp2->lineNo = ( *token )->lineNo;
+		tmp2->line = ( *token )->line;
+		tmp2->path = ( *token )->path;
+
+		identifier = tmp1->as<Token_Operator>()->operatorToken;
+		lexerStruct.insert( token, tmp1 );
+		token->swap( tmp2 );
+		token--;
+	}
 	void Lexer::printLexerStructure( CodeBase & base )
 	{
 		log( "Lexer structure (" + to_string( base.lexerStruct.size() ) + " items): " );
@@ -232,7 +251,8 @@ namespace nigel
 	}
 	ExecutionResult Lexer::postLexer( CodeBase &base )
 	{
-		std::shared_ptr<Token> tmp;
+		std::shared_ptr<Token> tmp, tmp2;
+
 		for( auto token = base.lexerStruct.begin() ; token != base.lexerStruct.end() ; token++ )
 		{
 			if( ( *token )->type == Token::Type::identifier )
@@ -314,112 +334,129 @@ namespace nigel
 			{
 				String identifier = ( *token )->as<Token_Operator>()->operatorToken;
 
-				if( identifier.size() >= 2 )
-				{
-					if( ( identifier[1] != '=' ||
-						( identifier[0] != '+' && identifier[0] != '-' && identifier[0] != '*' && identifier[0] != '/' && identifier[0] != '%' && identifier[0] != '=' && identifier[0] != '!' && identifier[0] != '<' && identifier[0] != '>' && identifier[0] != '&' && identifier[0] != '|' && identifier[0] != '^' ) ) &&
-						identifier.substr(0, 2) != "&&" && identifier.substr( 0, 2 ) != "||" && identifier.substr( 0, 2 ) != "<<" && identifier.substr( 0, 2 ) != ">>" && identifier.substr( 0, 3 ) != "<<=" && identifier.substr( 0, 3 ) != ">>=" )
-					{//Split operator
-						tmp = std::make_shared<Token_Operator>( String(1, identifier[0]) );
-						token->swap( tmp );
-						tmp = std::make_shared<Token_Operator>( identifier.substr( 1 ) );
-						base.lexerStruct.insert( token, tmp );
-					}//todo: catch case of e. g. "&&-"
-					else
-					{//Define dual (or more) char operators
-						if( identifier == "+=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_add_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "-=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_sub_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "*=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_mul_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "/=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_div_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "%=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_mod_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "==" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_eql );
-							token->swap( tmp );
-						}
-						else if( identifier == "!=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_not_eql );
-							token->swap( tmp );
-						}
-						else if( identifier == "<=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_less_eql );
-							token->swap( tmp );
-						}
-						else if( identifier == ">=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_more_eql );
-							token->swap( tmp );
-						}
-						else if( identifier == "&=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_and_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "|=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_or_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "^=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_xor_set );
-							token->swap( tmp );
-						}
-						else if( identifier == "&&" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_and_log );
-							token->swap( tmp );
-						}
-						else if( identifier == "||" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_or_log );
-							token->swap( tmp );
-						}
-						else if( identifier == "<<" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_shift_left );
-							token->swap( tmp );
-						}
-						else if( identifier == ">>" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_shift_right );
-							token->swap( tmp );
-						}
-						else if( identifier == "<<=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_shift_left_set );
-							token->swap( tmp );
-						}
-						else if( identifier == ">>=" )
-						{
-							tmp = std::make_shared<Token>( Token::Type::op_shift_right_set );
-							token->swap( tmp );
+				if( identifier.size() > 1 )
+				{//May have to be splitted
+					if( identifier.substr( 0, 3 ) == "<<=" || identifier.substr( 0, 3 ) == ">>=" )
+					{
+						if( identifier.size() > 3 )
+						{//Split
+							splitToken( identifier, 3, token, base.lexerStruct );
 						}
 					}
+					else if( identifier.substr( 0, 2 ) == "&&" || identifier.substr( 0, 2 ) == "||" || identifier.substr( 0, 2 ) == "<<" || identifier.substr( 0, 2 ) == ">>" || identifier.substr( 0, 2 ) == ">=" || identifier.substr( 0, 2 ) == "<=" || identifier.substr( 0, 2 ) == "++" || identifier.substr( 0, 2 ) == "--" || identifier.substr( 0, 2 ) == "==" || identifier.substr( 0, 2 ) == "!=" || identifier.substr( 0, 2 ) == "+=" || identifier.substr( 0, 2 ) == "-=" || identifier.substr( 0, 2 ) == "*=" || identifier.substr( 0, 2 ) == "/=" || identifier.substr( 0, 2 ) == "%=" || identifier.substr( 0, 2 ) == "&=" || identifier.substr( 0, 2 ) == "|=" || identifier.substr( 0, 2 ) == "^=" )
+					{
+						if( identifier.size() > 2 )
+						{//Split
+							splitToken( identifier, 2, token, base.lexerStruct );
+						}
+					}
+
+					if( identifier == "+=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_add_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "-=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_sub_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "*=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_mul_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "/=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_div_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "%=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_mod_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "==" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_eql );
+						token->swap( tmp );
+					}
+					else if( identifier == "!=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_not_eql );
+						token->swap( tmp );
+					}
+					else if( identifier == "<=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_less_eql );
+						token->swap( tmp );
+					}
+					else if( identifier == ">=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_more_eql );
+						token->swap( tmp );
+					}
+					else if( identifier == "&=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_and_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "|=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_or_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "^=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_xor_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "&&" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_and_log );
+						token->swap( tmp );
+					}
+					else if( identifier == "||" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_or_log );
+						token->swap( tmp );
+					}
+					else if( identifier == "<<" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_shift_left );
+						token->swap( tmp );
+					}
+					else if( identifier == ">>" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_shift_right );
+						token->swap( tmp );
+					}
+					else if( identifier == "<<=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_shift_left_set );
+						token->swap( tmp );
+					}
+					else if( identifier == ">>=" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_shift_right_set );
+						token->swap( tmp );
+					}
+					else if( identifier == "++" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_inc );
+						token->swap( tmp );
+					}
+					else if( identifier == "--" )
+					{
+						tmp = std::make_shared<Token>( Token::Type::op_dec );
+						token->swap( tmp );
+					}
+					else
+					{//Split
+						splitToken( identifier, 1, token, base.lexerStruct );
+					}
 				}
-				else
+				if( identifier.size() == 1 )
 				{//Single char operators
 					String identifier = ( *token )->as<Token_Operator>()->operatorToken;
 

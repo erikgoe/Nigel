@@ -14,6 +14,7 @@ namespace nigel
 			block,
 			variable,
 			term,
+			unary,
 			allocation,
 			literal,
 			functionCall,
@@ -26,7 +27,7 @@ namespace nigel
 
 		std::shared_ptr<Token> token;//Main ast-token
 
-		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::literal || type == Type::functionCall; }
+		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::functionCall; }
 
 		AstExpr( Type type ) : AstExpr::type(type) { }
 		virtual ~AstExpr() {}
@@ -110,6 +111,22 @@ namespace nigel
 		Token::Type op;
 
 		AstTerm() : AstReturning( AstExpr::Type::term ) {}
+	};
+
+		//Unary expression. Will be handled as term.
+	class AstUnary : public AstReturning
+	{
+	public:
+		enum Side
+		{
+			left,
+			right
+		};
+		Side side;
+		std::shared_ptr<AstReturning> val;
+		Token::Type op;
+
+		AstUnary() : AstReturning( AstExpr::Type::unary ) {}
 	};
 
 		//Allocation of a variable

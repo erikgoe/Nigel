@@ -20,6 +20,7 @@ namespace nigel
 		std::stack<std::shared_ptr<AstBlock>> blockStack;//Stack of blocks
 		std::shared_ptr<AstExpr> lValue;//Current lValue
 		std::stack<std::shared_ptr<AstExpr>> exprStack;//Stack of expressions to handle (e. g. for parenthesis)
+		bool expectValue = false;//If a variable is expected. E. g. after operator
 
 		CodeBase *base;
 		std::shared_ptr<Token> currToken;
@@ -40,8 +41,10 @@ namespace nigel
 
 		ExecutionResult onExecute( CodeBase &base ) override;
 
+	private:
 		std::shared_ptr<AstExpr> resolveNextExpr();
 
+		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstExpr> cExpr, int priority );
 	};
 }
 

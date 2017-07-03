@@ -9,7 +9,7 @@ namespace nigel
 	ExecutionResult Linker::onExecute( CodeBase &base )
 	{
 		{//Set address of values
-			u16 fastAdr = 0x20;
+			u16 fastAdr = 0x81;
 			u16 largeAdr = 0;
 			bool onlyNormal = false;
 
@@ -17,20 +17,20 @@ namespace nigel
 			{
 				if( v.second->model == MemModel::fast && !onlyNormal )
 				{
-					if( fastAdr > 0x7F )
+					if( ( fastAdr - v.second->size / 8 ) < 0x20 )
 					{
 						generateNotification( NT::warn_toManyVariablesInFastRAM, base.srcFile );
 						onlyNormal = true;
 					}
 					else
 					{
-						v.second->adress = fastAdr;
-						fastAdr += v.second->size / 8;
+						fastAdr -= v.second->size / 8;
+						v.second->address = fastAdr;
 					}
 				}
 				if( v.second->model == MemModel::large || onlyNormal )
 				{
-					v.second->adress = largeAdr;
+					v.second->address = largeAdr;
 					largeAdr += v.second->size / 8;
 				}
 			}
@@ -50,12 +50,16 @@ namespace nigel
 				{//Write variable
 					auto op = c->op1->as<EIR_Variable>();
 					if( op->model == MemModel::fast )
-						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 					else if( op->model == MemModel::large )
 					{
-						base.hexBuffer.push_back( static_cast< u8 >( op->adress << 8 ) );
-						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 					}
+				}
+				else if( c->op1->type == EIR_Operator::Type::sfr )
+				{//Write sfr register
+					base.hexBuffer.push_back( c->op1->as<EIR_SFR>()->address );
 				}
 			}
 			if( c->op2 != nullptr )
@@ -68,12 +72,16 @@ namespace nigel
 				{//Write variable
 					auto op = c->op2->as<EIR_Variable>();
 					if( op->model == MemModel::fast )
-						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 					else if( op->model == MemModel::large )
 					{
-						base.hexBuffer.push_back( static_cast< u8 >( op->adress << 8 ) );
-						base.hexBuffer.push_back( static_cast< u8 >( op->adress ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 					}
+				}
+				else if( c->op2->type == EIR_Operator::Type::sfr )
+				{//Write sfr register
+					base.hexBuffer.push_back( c->op2->as<EIR_SFR>()->address );
 				}
 			}
 		}

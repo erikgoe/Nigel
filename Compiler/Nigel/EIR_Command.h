@@ -26,9 +26,15 @@ namespace nigel
 		movx_a_dptr = 0xE0,
 		movx_dptr_a = 0xF0,
 
+		push_adr = 0xC0,
+		pop_adr = 0xD0,
+
 		xch_a_r0 = 0xC8,
 		xch_r0_a = 0xC8,
 		xch_a_adr = 0xC5,
+		xch_adr_a = 0xC5,
+
+		clr_c = 0xC3,
 
 		add_a_const = 0x24,
 		add_a_adr = 0x25,
@@ -36,6 +42,21 @@ namespace nigel
 		sub_a_const = 0x94,
 		sub_a_adr = 0x95,
 		sub_a_r0 = 0x98,
+		mul_a_b = 0xA4,
+		div_a_b = 0x84,
+
+		inc_a = 0x04,
+		dec_a = 0x14,
+		rr_a = 0x03,
+		rl_a = 0x23,
+
+		and_a_const = 0x54,
+		and_a_adr = 0x55,
+		or_a_const = 0x44,
+		or_a_adr = 0x45,
+		xor_a_const = 0x64,
+		xor_a_adr = 0x65,
+		cpl_a = 0xF4,
 
 		count
 	};
@@ -49,6 +70,7 @@ namespace nigel
 		{
 			constant,//Constant
 			variable,//Variable
+			sfr,//Special function register
 
 			count
 		} type;
@@ -73,7 +95,7 @@ namespace nigel
 	public:
 		MemModel model = MemModel::large;
 		u32 id = 0;//Unique id of this variable
-		u16 adress = 0;//Adress in ram, where to store the variable
+		u16 address = 0;//Address in ram, where to store the variable
 		u8 size = 8;//Size of this variable in bits
 
 		static std::shared_ptr<EIR_Variable> getNew(u8 size)
@@ -87,6 +109,7 @@ namespace nigel
 		}
 	};
 
+		//Constant value from a literal
 	class EIR_Constant : public EIR_Operator
 	{
 	public:
@@ -100,6 +123,29 @@ namespace nigel
 		EIR_Constant( u8 data ) : EIR_Operator( EIR_Operator::Type::constant )
 		{
 			this->data = data;
+		}
+	};
+
+		//Special function register
+	class EIR_SFR : public EIR_Operator
+	{
+	public:
+		enum class SFR
+		{
+			A = 0xE0,//Accumulator-register
+			B = 0xF0,//B-register
+
+			count
+		};
+		u8 address = 0;
+
+		static std::shared_ptr<EIR_SFR> getSFR( SFR sfr )
+		{
+			return std::make_shared<EIR_SFR>( sfr );
+		}
+		EIR_SFR( SFR address ) : EIR_Operator( EIR_Operator::Type::sfr )
+		{
+			this->address = static_cast<u8>( address );
 		}
 	};
 
