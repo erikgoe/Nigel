@@ -11,6 +11,7 @@ namespace nigel
 	public:
 		enum class Type
 		{
+			empty,
 			eof,//End of file
 			ppEnd,//end of preprocessor directive
 
@@ -55,6 +56,7 @@ namespace nigel
 			op_xor,// ^
 			op_inv,// ~
 			op_set,// =
+			op_set_get,// = (The operation is itselve a returning, so it has to copy the value into the acc)
 			op_add_set,// +=
 			op_sub_set,// -=
 			op_mul_set,// *=
@@ -89,7 +91,7 @@ namespace nigel
 			comment,
 
 			count
-		} type;
+		} type = Type::empty;
 
 		size_t lineNo = 0;//Line in the code file
 		size_t columnNo = 0;//Column in the code file
@@ -114,7 +116,7 @@ namespace nigel
 			//Returns true if this token is a operator token
 		bool isOperator() const
 		{
-			return type == Type::op_add || type == Type::op_sub || type == Type::op_mul || type == Type::op_div || type == Type::op_mod || type == Type::op_add_set || type == Type::op_sub_set || type == Type::op_mul_set || type == Type::op_div_set || type == Type::op_mod_set || type == Type::op_set || type == Type::op_eql || type == Type::op_not_eql ||
+			return type == Type::op_add || type == Type::op_sub || type == Type::op_mul || type == Type::op_div || type == Type::op_mod || type == Type::op_add_set || type == Type::op_sub_set || type == Type::op_mul_set || type == Type::op_div_set || type == Type::op_mod_set || type == Type::op_set || type == Type::op_set_get || type == Type::op_eql || type == Type::op_not_eql ||
 				type == Type::op_less || type == Type::op_more || type == Type::op_less_eql || type == Type::op_more_eql || type == Type::op_shift_left || type == Type::op_shift_right || type == Type::op_shift_left_set || type == Type::op_shift_right_set || type == Type::op_not || type == Type::op_and || type == Type::op_and_set || type == Type::op_and_log || type == Type::op_or || type == Type::op_or_set || type == Type::op_or_log || type == Type::op_xor || type == Type::op_xor_set || type == Type::op_inv || type == Type::op_inc || type == Type::op_dec;
 		}
 	};

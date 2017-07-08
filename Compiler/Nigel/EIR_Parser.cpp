@@ -15,6 +15,14 @@ namespace nigel
 		else return OT::count;//error
 	}
 
+	OC EIR_Parser::setRValTerm( OC comb )
+	{
+		if( comb == OC::vv || comb == OC::vc ) return OC::vt;
+		else if( comb == OC::cv || comb == OC::cc ) return OC::ct;
+		else if( comb == OC::tv || comb == OC::tc ) return OC::tt;
+		else return comb;
+	}
+
 	void EIR_Parser::printEIR( CodeBase & base )
 	{
 		log( "EIR:\n#VARDEF" );
@@ -35,17 +43,17 @@ namespace nigel
 				if( c->op1->type == EIR_Operator::Type::variable )
 				{
 					std::shared_ptr<EIR_Variable> var = c->op1->as<EIR_Variable>();
-					out += "v" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
+					out += "V" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
 				}
 				else if( c->op1->type == EIR_Operator::Type::constant )
 				{
 					std::shared_ptr<EIR_Constant> var = c->op1->as<EIR_Constant>();
-					out += "c" + int_to_hex( var->data );
+					out += "C" + int_to_hex( var->data );
 				}
 				else if( c->op1->type == EIR_Operator::Type::sfr )
 				{
 					std::shared_ptr<EIR_SFR> var = c->op1->as<EIR_SFR>();
-					out += "s" + int_to_hex( var->address );
+					out += "S" + int_to_hex( var->address );
 				}
 
 				if( c->op2 != nullptr )
@@ -54,17 +62,17 @@ namespace nigel
 					if( c->op2->type == EIR_Operator::Type::variable )
 					{
 						std::shared_ptr<EIR_Variable> var = c->op2->as<EIR_Variable>();
-						out += "v" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
+						out += "V" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
 					}
 					else if( c->op2->type == EIR_Operator::Type::constant )
 					{
 						std::shared_ptr<EIR_Constant> var = c->op2->as<EIR_Constant>();
-						out += "c" + int_to_hex( var->data );
+						out += "C" + int_to_hex( var->data );
 					}
 					else if( c->op2->type == EIR_Operator::Type::sfr )
 					{
 						std::shared_ptr<EIR_SFR> var = c->op2->as<EIR_SFR>();
-						out += "s" + int_to_hex( var->address );
+						out += "S" + int_to_hex( var->address );
 					}
 				}
 			}
@@ -142,11 +150,13 @@ namespace nigel
 			if( a->rVal->type == AstExpr::Type::variable ) rOp = varList[a->rVal->as<AstVariable>()->name];
 			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
 			else if( a->rVal->type == AstExpr::Type::term ||
-					 a->rVal->type == AstExpr::Type::unary )
+					 a->rVal->type == AstExpr::Type::unary ||
+					 a->rVal->type == AstExpr::Type::parenthesis )
 			{
 				parseAst( a->rVal, varList );
 				if( a->lVal->type == AstExpr::Type::term ||
-					a->lVal->type == AstExpr::Type::unary )//push to stack if OC::tt
+					a->lVal->type == AstExpr::Type::unary ||
+					a->lVal->type == AstExpr::Type::parenthesis )//push to stack if OC::tt
 					addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::A ) );
 				else addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
@@ -157,7 +167,8 @@ namespace nigel
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::vv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::vc;
 				else if( a->rVal->type == AstExpr::Type::term ||
-						 a->rVal->type == AstExpr::Type::unary ) comb = OC::vt;
+						 a->rVal->type == AstExpr::Type::unary ||
+						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::vt;
 			}
 			else if( a->lVal->type == AstExpr::Type::literal )
 			{//lValue is a constant
@@ -165,16 +176,19 @@ namespace nigel
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::cv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::cc;
 				else if( a->rVal->type == AstExpr::Type::term ||
-						 a->rVal->type == AstExpr::Type::unary ) comb = OC::ct;
+						 a->rVal->type == AstExpr::Type::unary ||
+						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::ct;
 			}
 			else if( a->lVal->type == AstExpr::Type::term ||
-					 a->lVal->type == AstExpr::Type::unary )
+					 a->lVal->type == AstExpr::Type::unary ||
+					 a->lVal->type == AstExpr::Type::parenthesis )
 			{//lValue is a term
 				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
-				else if( a->rVal->type == AstExpr::Type::term || 
-						 a->rVal->type == AstExpr::Type::unary )
+				else if( a->rVal->type == AstExpr::Type::term ||
+						 a->rVal->type == AstExpr::Type::unary ||
+						 a->rVal->type == AstExpr::Type::parenthesis )
 				{//pop from stack to B
 					comb = OC::tt;
 					addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
@@ -185,7 +199,11 @@ namespace nigel
 			//Handle operation
 			if( a->op == Token::Type::op_set )
 			{// =
-				generateSet( comb, lOp, rOp, a->lVal->token );
+				generateSet( comb, lOp, rOp, a->lVal->token, false );
+			}
+			if( a->op == Token::Type::op_set_get )
+			{// = (The operation is itselve a returning, so it has to copy the value into the acc)
+				generateSet( comb, lOp, rOp, a->lVal->token, true );
 			}
 			else if( a->op == Token::Type::op_add )
 			{// +
@@ -231,10 +249,12 @@ namespace nigel
 					generateNotification( NT::err_onlyConstantsAreAllowedForBitShifts, a->rVal->token );
 					return;
 				}
-				else
+				else if( rOp->as<EIR_Constant>()->data >= 0x80 )
 				{
-					generateUnaryLOperation( binaryToUnaryOperationType( comb ), HexOp::rl_a, lOp, a->token, false, rOp->as<EIR_Constant>()->data );
+					generateNotification( NT::err_onlyPositiveConstantsAreAllowedForBitShifts, a->rVal->token );
+					return;
 				}
+				generateUnaryLOperation( binaryToUnaryOperationType( comb ), HexOp::rl_a, lOp, a->token, false, rOp->as<EIR_Constant>()->data );
 			}
 			else if( a->op == Token::Type::op_shift_right )
 			{// >>
@@ -243,10 +263,95 @@ namespace nigel
 					generateNotification( NT::err_onlyConstantsAreAllowedForBitShifts, a->rVal->token );
 					return;
 				}
-				else
+				else if( rOp->as<EIR_Constant>()->data >= 0x80 )
 				{
-					generateUnaryLOperation( binaryToUnaryOperationType( comb ), HexOp::rr_a, lOp, a->token, false, rOp->as<EIR_Constant>()->data );
+					generateNotification( NT::err_onlyPositiveConstantsAreAllowedForBitShifts, a->rVal->token );
+					return;
 				}
+				generateUnaryLOperation( binaryToUnaryOperationType( comb ), HexOp::rr_a, lOp, a->token, false, rOp->as<EIR_Constant>()->data );
+			}
+
+
+			else if( a->op == Token::Type::op_add_set )
+			{// +=
+				generateOperation( comb, HexOp::add_a_adr, HexOp::add_a_const, lOp, rOp, a->token );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_sub_set )
+			{// -=
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, lOp, rOp, a->token );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_mul_set )
+			{// *=
+				generateMoveAB( comb, lOp, rOp, a->token );
+				addCmd( HexOp::mul_a_b );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_div_set )
+			{// /=
+				generateMoveAB( comb, lOp, rOp, a->token );
+				addCmd( HexOp::div_a_b );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_mod_set )
+			{// %=
+				generateMoveAB( comb, lOp, rOp, a->token );
+				addCmd( HexOp::div_a_b );
+				addCmd( HexOp::xch_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_and_set )
+			{// &=
+				generateOperation( comb, HexOp::and_a_adr, HexOp::and_a_const, lOp, rOp, a->token );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_or_set )
+			{// |=
+				generateOperation( comb, HexOp::or_a_adr, HexOp::or_a_const, lOp, rOp, a->token );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_xor_set )
+			{// ^=
+				generateOperation( comb, HexOp::xor_a_adr, HexOp::xor_a_const, lOp, rOp, a->token );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_shift_left_set )
+			{// <<=
+				if( a->rVal->type != AstExpr::Type::literal || rOp->type != EIR_Operator::Type::constant )
+				{
+					generateNotification( NT::err_onlyConstantsAreAllowedForBitShifts, a->rVal->token );
+					return;
+				}
+				else if( rOp->as<EIR_Constant>()->data >= 0x80 )
+				{
+					generateNotification( NT::err_onlyPositiveConstantsAreAllowedForBitShifts, a->rVal->token );
+					return;
+				}
+				generateUnaryLOperation( binaryToUnaryOperationType( comb ), HexOp::rl_a, lOp, a->token, false, rOp->as<EIR_Constant>()->data );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+			else if( a->op == Token::Type::op_shift_right_set )
+			{// >>=
+				if( a->rVal->type != AstExpr::Type::literal || rOp->type != EIR_Operator::Type::constant )
+				{
+					generateNotification( NT::err_onlyConstantsAreAllowedForBitShifts, a->rVal->token );
+					return;
+				}
+				else if( rOp->as<EIR_Constant>()->data >= 0x80 )
+				{
+					generateNotification( NT::err_onlyPositiveConstantsAreAllowedForBitShifts, a->rVal->token );
+					return;
+				}
+				generateUnaryLOperation( binaryToUnaryOperationType( comb ), HexOp::rr_a, lOp, a->token, false, rOp->as<EIR_Constant>()->data );
+				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
+			}
+
+
+			else
+			{
+				//todo error: unknown binary operator
 			}
 
 		}
@@ -284,7 +389,7 @@ namespace nigel
 				{// --
 					generateUnaryLOperation( ot, HexOp::dec_a, op, a->token, true );
 				}
-				if( a->token->type == Token::Type::op_sub )
+				else if( a->token->type == Token::Type::op_sub )
 				{// -
 					OC comb = OC::cv;
 					if( ot == OT::v ) comb = OC::cv;
@@ -293,9 +398,17 @@ namespace nigel
 
 					generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, std::make_shared<EIR_Constant>( 0 ), op, a->token );
 				}
-				if( a->token->type == Token::Type::op_add )
+				else if( a->token->type == Token::Type::op_add )
 				{// + //Ignore this operation and do nothing
 					generateMoveA( ot, op );
+				}
+				else if( a->token->type == Token::Type::op_inv )
+				{// ~
+					generateUnaryLOperation( ot, HexOp::cpl_a, op, a->token, false );
+				}
+				else
+				{
+					//todo error: unknown unary operator
 				}
 			}
 			else
@@ -310,16 +423,46 @@ namespace nigel
 				}
 			}
 		}
+		else if( ast->type == AstExpr::Type::parenthesis )
+		{//Submit content
+			std::shared_ptr<AstParenthesis> a = ast->as<AstParenthesis>();
+			OperationType ot;//Operator type combination
+			std::shared_ptr<EIR_Operator> op;
+
+			//Memorize val
+			if( a->content->type == AstExpr::Type::variable )
+			{
+				ot = OT::v;
+				op = varList[a->content->as<AstVariable>()->name];
+			}
+			else if( a->content->type == AstExpr::Type::literal )
+			{
+				ot = OT::c;
+				op = EIR_Constant::fromAstLiteral( a->content->as<AstLiteral>() );
+			}
+			else if( a->content->type == AstExpr::Type::term )
+			{
+				ot = OT::t;
+				parseAst( a->content, varList );
+			}
+
+			generateMoveA( ot, op );
+		}
 	}
 
-	void EIR_Parser::generateSet( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> lValToken )
+	void EIR_Parser::generateSet( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> lValToken, bool copyInAcc )
 	{
 		if( comb == OC::vv )
 		{
 			if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
 				rOp->as<EIR_Variable>()->model == MemModel::fast )
 			{
-				addCmd( HexOp::mov_adr_adr, rOp, lOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_adr, rOp );
+					addCmd( HexOp::mov_adr_a, lOp );
+				}
+				else addCmd( HexOp::mov_adr_adr, rOp, lOp );
 			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
 					 rOp->as<EIR_Variable>()->model == MemModel::fast )
@@ -348,7 +491,12 @@ namespace nigel
 		{
 			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
 			{
-				addCmd( HexOp::mov_adr_const, lOp, rOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_const, rOp );
+					addCmd( HexOp::mov_adr_a, lOp );
+				}
+				else addCmd( HexOp::mov_adr_const, lOp, rOp );
 			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
 			{
@@ -361,11 +509,33 @@ namespace nigel
 		{
 			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
 			{
-				addCmd( HexOp::mov_adr_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ), lOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+					addCmd( HexOp::mov_adr_a, lOp );
+				}
+				else addCmd( HexOp::mov_adr_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ), lOp );
 			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
 			{
 				addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_dptr_const, lOp );
+				addCmd( HexOp::movx_dptr_a );
+			}
+		}
+		else generateNotification( NT::err_cannotSetAConstantLiteral, lValToken );
+	}
+
+	void EIR_Parser::generateSetAfterOp( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<Token> lValToken )
+	{
+		if( comb == OC::vv || comb == OC::vc || comb == OC::vt )
+		{//Is the same, because after a operation everything will be located in the acc.
+			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				addCmd( HexOp::mov_adr_a, lOp );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large )
+			{
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_dptr_a );
 			}

@@ -5,7 +5,7 @@ namespace nigel
 {
 	String Token::toString( bool extended ) const
 	{
-		if( type == Token::Type::eof ) return "EOF";
+		if( type == Token::Type::eof ) return "_!EOF!_";
 		else if( type == Token::Type::ppEnd ) return "PP-END";
 		else if( type == Token::Type::function ) return "function";
 		else if( type == Token::Type::type_byte ) return "byte";

@@ -17,6 +17,7 @@ namespace nigel
 			unary,
 			allocation,
 			literal,
+			parenthesis,
 			functionCall,
 			returnStat,
 			ifStat,
@@ -27,7 +28,7 @@ namespace nigel
 
 		std::shared_ptr<Token> token;//Main ast-token
 
-		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::functionCall; }
+		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
 
 		AstExpr( Type type ) : AstExpr::type(type) { }
 		virtual ~AstExpr() {}
@@ -147,6 +148,13 @@ namespace nigel
 		AstLiteral() : AstReturning( AstExpr::Type::literal ) {}
 	};
 
+	class AstParenthesis : public AstReturning
+	{
+	public:
+		std::shared_ptr<AstReturning> content = nullptr;
+
+		AstParenthesis() : AstReturning( AstExpr::Type::parenthesis ) {}
+	};
 
 
 }

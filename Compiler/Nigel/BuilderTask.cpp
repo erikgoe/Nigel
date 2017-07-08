@@ -40,13 +40,18 @@ namespace nigel
 			if( n->lineText != nullptr )
 			{
 				outStr += ": \n";
-				outStr += *n->lineText + "\n";
+				outStr += *n->lineText;
 			}
 
 			if( n->token != nullptr )
 			{
-				for( size_t i = 1 ; i < n->token->columnNo ; i++ ) outStr += ' ';
-				if( n->token->toString() == "-!-UNKNOWN-!-" ) outStr += '^';
+				size_t pos = n->token->columnNo;
+				if( n->token->toString() == "_!EOF!_" ) pos = n->lineText->size() + 1;
+
+				for( size_t i = 1 ; i < pos ; i++ ) outStr += ' ';
+
+				if( n->token->toString() == "-!-UNKNOWN-!-" ||
+					n->token->toString() == "_!EOF!_" ) outStr += '^';
 				else for( size_t i = 0 ; i < n->token->toString().size() ; i++ ) outStr += '^';
 			}
 
@@ -94,7 +99,9 @@ namespace nigel
 		notificationTexts[NT::err_undefinedIdentifier] = "The identifiern is not defined.";
 		notificationTexts[NT::err_noAllocationAfterVariableAttribute] = "Expected allocation after attribute keyword.";
 
-		notificationTexts[NT::err_unexpectedIdentifierAfterIdentifier] = "Unexpected identifier after identifier.";
+		notificationTexts[NT::err_unexpectedReturningBeforeIdentifier] = "Unexpected returnable before identifier.";
+		notificationTexts[NT::err_unexpectedReturningBeforeLiteral] = "Unexpected returnable before literal.";
+		notificationTexts[NT::err_unexpectedReturningBeforeParenthesisBlock] = "Unexpected retunrable before parenthesis block.";
 		notificationTexts[NT::err_expectedIdentifierBeforeOperator] = "Exptected Identifiern before operation.";
 		notificationTexts[NT::err_expectedIdentifierAfterOperator] = "Exptected Identifiern after operation.";
 		notificationTexts[NT::err_expectedExprWithReturnValue_atOperation] = "Expected expression or value as rValue at operation.";
@@ -102,6 +109,18 @@ namespace nigel
 
 		notificationTexts[NT::err_cannotSetAConstantLiteral] = "Cannot set a constant literal or term. Did you mean '=='?";
 		notificationTexts[NT::err_onlyConstantsAreAllowedForBitShifts] = "Only positive constants are allowed for binary shifts, due to processor limitations.";
+		notificationTexts[NT::err_onlyPositiveConstantsAreAllowedForBitShifts] = "Only positive constants are allowed for binary shifts. Use the opperation antagonist instead.";
+		notificationTexts[NT::err_cannotSetAConstantLiteralInCombinedOperationSet] = "Cannot set a constant literal or term with the operation result.";
+
+
+		notificationTexts[NT::err_expectedIdentifierInParenthesis] = "Unexpected identifier in parenthesis block.";
+		notificationTexts[NT::err_expectedExprWithReturnValue_atParenthesis] = "Expected returnable in parenthesis block.";
+		notificationTexts[NT::err_unexpectedLiteralInParenthesis] = "Unexpected literal in parenthesis block.";
+		notificationTexts[NT::err_unexpectedIdentifierInParenthesis] = "Unexpected identifier in parenthesis block.";
+		notificationTexts[NT::err_expectedTermAfterReturnableInParenthesis] = "Expected term after returnable in parenthesis block.";
+		notificationTexts[NT::err_unexpectedCloseOfParenthesis] = "Unexpected closing of parenthesis block.";
+		notificationTexts[NT::err_aParenthesisWasNotClosed] = "A parenthesis block was not closed.";
+
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";
 		notificationTexts[NT::warn_emptyDirective] = "Preprocessor directive is empty. You can safely remove this line.";
@@ -109,8 +128,10 @@ namespace nigel
 
 		notificationTexts[NT::warn_toManyVariablesInFastRAM] = "To many variables were declared for fast memory. All other variables will be saved in normal memory.";
 
+
 		notificationTexts[NT::imp_operationOnTwoConstantsCanBePrevented] = "The operation is obsolete and could be replaced by a single constant.";
 		notificationTexts[NT::imp_operationOnConstantCanBePrevented] = "The operation is obsolete and could be replaced by a single constant.";
+
 	}
 
 	ExecutionResult BuilderTask::execute( std::map<String, std::list<String>> parameters, std::set<char> flags )

@@ -38,7 +38,11 @@ namespace nigel
 	private:
 		CodeBase *base;
 
+		//Converts a binary operation to an unary operation.
 		OperationType binaryToUnaryOperationType( OperationCombination comb );
+
+		//Set the rValue to term. Useful for second operations e. g. '+='
+		OperationCombination setRValTerm( OperationCombination comb );
 
 		//Writes the EIR into the console.
 		void printEIR( CodeBase &base );
@@ -54,7 +58,10 @@ namespace nigel
 
 	private:
 		//Generate a move operation.
-		void generateSet( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> lValToken );
+		void generateSet( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> lValToken, bool copyInAcc );
+
+		//Generate a move operation after another operation. This will minimize the needed code.
+		void generateSetAfterOp( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<Token> lValToken );
 
 		//Generate a arithmetic operation. \p op_val: hexcode for operation with a variable into acc, \p op_const: hexcode for operation with a constant into acc.
 		void generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );

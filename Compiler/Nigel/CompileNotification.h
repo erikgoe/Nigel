@@ -39,7 +39,9 @@ namespace nigel
 			err_undefinedIdentifier,
 			err_noAllocationAfterVariableAttribute,
 
-			err_unexpectedIdentifierAfterIdentifier,
+			err_unexpectedReturningBeforeIdentifier,
+			err_unexpectedReturningBeforeLiteral,
+			err_unexpectedReturningBeforeParenthesisBlock,
 			err_expectedIdentifierBeforeOperator,
 			err_expectedIdentifierAfterOperator,
 			err_expectedExprWithReturnValue_atOperation,
@@ -47,6 +49,17 @@ namespace nigel
 
 			err_cannotSetAConstantLiteral,
 			err_onlyConstantsAreAllowedForBitShifts,
+			err_onlyPositiveConstantsAreAllowedForBitShifts,
+			err_cannotSetAConstantLiteralInCombinedOperationSet,
+
+			err_expectedIdentifierInParenthesis,
+			err_expectedExprWithReturnValue_atParenthesis,
+			err_unexpectedLiteralInParenthesis,
+			err_unexpectedIdentifierInParenthesis,
+			err_expectedTermAfterReturnableInParenthesis,
+			err_unexpectedCloseOfParenthesis,
+			err_aParenthesisWasNotClosed,
+
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 
@@ -55,6 +68,7 @@ namespace nigel
 			warn_undefinedIdentifiernAtUndefDirective,
 
 			warn_toManyVariablesInFastRAM,
+
 
 			begin_improvements = 0xffff,//All improvement notifications will start at this position.
 

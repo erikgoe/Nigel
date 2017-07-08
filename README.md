@@ -79,7 +79,6 @@ The resulting Hex code can be burned onto a 8051 microcontroller or be interpret
 - [x] Linker
 
 ### Next development steps
-* Resolving of arithmetic terms + '()'
 * Blocks
 * Controll flow
 * 16+ types

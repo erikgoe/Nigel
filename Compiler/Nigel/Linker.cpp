@@ -9,7 +9,7 @@ namespace nigel
 	ExecutionResult Linker::onExecute( CodeBase &base )
 	{
 		{//Set address of values
-			u16 fastAdr = 0x81;
+			u16 fastAdr = 0x80;
 			u16 largeAdr = 0;
 			bool onlyNormal = false;
 

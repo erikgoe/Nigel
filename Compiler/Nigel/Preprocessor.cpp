@@ -250,6 +250,7 @@ namespace nigel
 					{//Is not ignored
 						//Remove obsolete carriage returns
 						replace( str, String( "\r" ), String() );
+						str += '\n';
 
 						//Replace defined constructs
 						for( auto &s : definitions )

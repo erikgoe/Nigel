@@ -41,13 +41,14 @@ namespace nigel
 		if( !str.empty() && !isWhitespace( str.front() ) )
 		{
 			std::shared_ptr<Token> token;
-			if( isOperator( str.front() ) )
+
+			if( isNumber( str.front() ) || ( str.size() > 1 && ( str.front() == '-' || str.front() == '+' ) && isNumber( str[1] ) ) )
+			{
+				token = makeToken( std::make_shared<Token_NumberL>( stoi( str, 0, 0 ) ) );
+			}
+			else if( isOperator( str.front() ) )
 			{
 				token = makeToken( std::make_shared<Token_Operator>( str ) );
-			}
-			else if( isNumber( str.front() ) )
-			{
-				token = makeToken( std::make_shared<Token_NumberL>( stoi( str ) ) );
 			}
 			else if( isDividingToken( str.front() ) )
 			{
@@ -140,9 +141,24 @@ namespace nigel
 			else c = base.fileCont[fileLine].content->at( currColumnNo++ );
 
 
-			if( isString && c != '"' )
+			if( isString && ( c != '"' || previousC == '\\'  ) )
 			{//Capture string literal
-				tmpStr += c;
+				if( previousC == '\\' )
+				{
+					if( c == '\\' ) tmpStr += '\\';//Backslash
+					else if( c == 'n' ) tmpStr += '\n';//Newline
+					else if( c == 'r' ) tmpStr += '\r';//Carriage return
+					else if( c == 't' ) tmpStr += '\t';//Tabulator
+					else if( c == 'v' ) tmpStr += '\v';//Vertical tabulator
+					else if( c == 'b' ) tmpStr += '\b';//Backspace
+					else if( c == 'f' ) tmpStr += '\f';//Form feed
+					else if( c == 'a' ) tmpStr += '\a';//Alert
+					else if( c == '?' ) tmpStr += '\?';//Question mark
+					else if( c == '\'' ) tmpStr += '\'';//Single quote
+					else if( c == '"' ) tmpStr += '\"';//Double quote
+					else if( c == '0' ) tmpStr += '\0';//Null as value, not as character.
+				}
+				else if( c != '\\' ) tmpStr += c;
 			}
 			else if( isLineComment )
 			{//Capture comment
@@ -197,9 +213,11 @@ namespace nigel
 					tmpStr += c;
 				}
 			}
-			else if( isNumber( c ) )
+			else if( isNumber( c ) || ( c == 'x' && tmpStr == "0" ) )
 			{
-				if( tmpStr.empty() || isNumber( previousC ) || isIdentifier( tmpStr.front() ) ) tmpStr += c;
+				if( tmpStr.empty() || isNumber( previousC ) || isIdentifier( tmpStr.front() ) || previousC == '0' ||
+					( ( tmpStr == "-" || tmpStr == "+" ) && ( base.lexerStruct.empty() || base.lexerStruct.back()->type == Token::Type::operatorToken || base.lexerStruct.back()->type == Token::Type::dividingToken ) )
+					) tmpStr += c;
 				else if( !tmpStr.empty() )
 				{//Finish previous token
 					adoptToken( tmpStr, base );
@@ -239,7 +257,8 @@ namespace nigel
 				}
 			}
 
-			previousC = c;
+			if( previousC != '\\' ) previousC = c;
+			else previousC = 0;
 		}
 		base.lexerStruct.push_back( makeToken( std::make_shared<Token>( Token::Type::eof ) ) );
 
@@ -252,6 +271,7 @@ namespace nigel
 	ExecutionResult Lexer::postLexer( CodeBase &base )
 	{
 		std::shared_ptr<Token> tmp, tmp2;
+		std::list<std::list<std::shared_ptr<Token>>::iterator> toRemove;
 
 		for( auto token = base.lexerStruct.begin() ; token != base.lexerStruct.end() ; token++ )
 		{
@@ -259,7 +279,12 @@ namespace nigel
 			{//Specify some tokens in more detail
 				String identifier = ( *token )->as<Token_Identifier>()->identifier;
 
-				if( identifier == "fn" )
+				if( identifier == "_EOF_" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::eof );
+					token->swap( tmp );
+				}
+				else if( identifier == "fn" )
 				{
 					tmp = std::make_shared<Token>( Token::Type::function );
 					token->swap( tmp );
@@ -620,6 +645,17 @@ namespace nigel
 				( *token )->path = tmp->path;
 			}
 			tmp = nullptr;
+
+			if( ( *token )->type == Token::Type::empty )
+			{
+				toRemove.push_back( token );
+			}
+		}
+
+		//Remove empty token, if any
+		for( auto &remove : toRemove )
+		{
+			base.lexerStruct.erase( remove );
 		}
 
 		return ExecutionResult::success;
