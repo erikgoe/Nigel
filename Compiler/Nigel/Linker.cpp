@@ -9,11 +9,30 @@ namespace nigel
 	ExecutionResult Linker::onExecute( CodeBase &base )
 	{
 		{//Set address of values
-			u16 adr = 0;
-			for( auto v : base.eirValues )
+			u16 fastAdr = 0x80;
+			u16 largeAdr = 0;
+			bool onlyNormal = false;
+
+			for( auto &v : base.eirValues )
 			{
-				v.second->adress = adr;
-				adr += v.second->size/8;
+				if( v.second->model == MemModel::fast && !onlyNormal )
+				{
+					if( ( fastAdr - v.second->size / 8 ) < 0x20 )
+					{
+						generateNotification( NT::warn_toManyVariablesInFastRAM, base.srcFile );
+						onlyNormal = true;
+					}
+					else
+					{
+						fastAdr -= v.second->size / 8;
+						v.second->address = fastAdr;
+					}
+				}
+				if( v.second->model == MemModel::large || onlyNormal )
+				{
+					v.second->address = largeAdr;
+					largeAdr += v.second->size / 8;
+				}
 			}
 		}
 
@@ -29,7 +48,18 @@ namespace nigel
 				}
 				else if( c->op1->type == EIR_Operator::Type::variable )
 				{//Write variable
-					base.hexBuffer.push_back( static_cast< u8 >( c->op1->as<EIR_Variable>()->adress ) );
+					auto op = c->op1->as<EIR_Variable>();
+					if( op->model == MemModel::fast )
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
+					else if( op->model == MemModel::large )
+					{
+						base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
+					}
+				}
+				else if( c->op1->type == EIR_Operator::Type::sfr )
+				{//Write sfr register
+					base.hexBuffer.push_back( c->op1->as<EIR_SFR>()->address );
 				}
 			}
 			if( c->op2 != nullptr )
@@ -40,16 +70,27 @@ namespace nigel
 				}
 				else if( c->op2->type == EIR_Operator::Type::variable )
 				{//Write variable
-					base.hexBuffer.push_back( static_cast< u8 >( c->op2->as<EIR_Variable>()->adress ) );
+					auto op = c->op2->as<EIR_Variable>();
+					if( op->model == MemModel::fast )
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
+					else if( op->model == MemModel::large )
+					{
+						base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
+					}
+				}
+				else if( c->op2->type == EIR_Operator::Type::sfr )
+				{//Write sfr register
+					base.hexBuffer.push_back( c->op2->as<EIR_SFR>()->address );
 				}
 			}
 		}
 
 		//Add infinite loop
-		base.hexBuffer.push_back( 80 );
+		base.hexBuffer.push_back( 128 );
 		base.hexBuffer.push_back( 254 );
 
-		printToFile( base.hexBuffer, base.destFile );
+		printToFile( base.hexBuffer, *base.destFile );
 
 		return ExecutionResult::success;
 	}
@@ -72,7 +113,7 @@ namespace nigel
 				out = "";
 			}
 		}
-		if( out.size() >= 0 )
+		if( out.size() > 0 )
 		{
 			fileStr += ":" + int_to_hex( static_cast< u8 >( out.size() / 2 ) ) + int_to_hex( startAddr ) + "00" + out + int_to_hex( static_cast< u8 >( ~( checksum % 256 )+1 ) ) + "\r\n";
 		}

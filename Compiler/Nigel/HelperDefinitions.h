@@ -91,13 +91,14 @@ namespace helper
 	template<typename T>
 	void replace( T &searchIn, const T &searchFor, const T &replaceWith )
 	{
-		std::size_t pos = 0;
+		size_t pos = 0;
 		while( pos != T::npos )
 		{
-			pos = searchIn.find( searchFor, pos + 1 );
+			pos = searchIn.find( searchFor, pos );
 			if( pos != T::npos )
 			{
 				searchIn.replace( pos, searchFor.size(), replaceWith );
+				pos += replaceWith.size();
 			}
 		}
 	}

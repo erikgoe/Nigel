@@ -14,8 +14,10 @@ namespace nigel
 			block,
 			variable,
 			term,
+			unary,
 			allocation,
 			literal,
+			parenthesis,
 			functionCall,
 			returnStat,
 			ifStat,
@@ -24,7 +26,9 @@ namespace nigel
 			count
 		} type;
 
-		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::literal || type == Type::functionCall; }
+		std::shared_ptr<Token> token;//Main ast-token
+
+		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
 
 		AstExpr( Type type ) : AstExpr::type(type) { }
 		virtual ~AstExpr() {}
@@ -61,6 +65,14 @@ namespace nigel
 
 		count
 	};
+		//Defines where a variable will be saved.
+	enum class MemModel
+	{
+		fast,
+		large,
+
+		count
+	};
 
 		//Base class for a expression with a return value
 	class AstReturning : public AstExpr
@@ -85,6 +97,7 @@ namespace nigel
 	class AstVariable : public AstReturning
 	{
 	public:
+		MemModel model = MemModel::large;
 		String name;
 
 		AstVariable() : AstReturning( AstExpr::Type::variable ) {}
@@ -99,6 +112,22 @@ namespace nigel
 		Token::Type op;
 
 		AstTerm() : AstReturning( AstExpr::Type::term ) {}
+	};
+
+		//Unary expression. Will be handled as term.
+	class AstUnary : public AstReturning
+	{
+	public:
+		enum Side
+		{
+			left,
+			right
+		};
+		Side side;
+		std::shared_ptr<AstReturning> val;
+		Token::Type op;
+
+		AstUnary() : AstReturning( AstExpr::Type::unary ) {}
 	};
 
 		//Allocation of a variable
@@ -119,6 +148,13 @@ namespace nigel
 		AstLiteral() : AstReturning( AstExpr::Type::literal ) {}
 	};
 
+	class AstParenthesis : public AstReturning
+	{
+	public:
+		std::shared_ptr<AstReturning> content = nullptr;
+
+		AstParenthesis() : AstReturning( AstExpr::Type::parenthesis ) {}
+	};
 
 
 }

@@ -18,9 +18,16 @@ namespace nigel
 		size_t currColumnNo = 0;
 		size_t previousLineNo = 0;//Line in the code file
 		size_t previousColumnNo = 0;//Column in the code file
+		std::shared_ptr<String> currLine;
+		std::shared_ptr<fs::path> currPath;
+
+		std::shared_ptr<Token> makeToken( std::shared_ptr<Token> token );
 
 		//Determine the token type and write it to the codebase.
 		void adoptToken( String &str, CodeBase &base );
+
+		//Splits a token into two
+		void splitToken( String &identifier, size_t index, std::list<std::shared_ptr<Token>>::iterator &token, std::list<std::shared_ptr<Token>> &lexerStruct );
 
 		//Writes the lexer structure into the console.
 		void printLexerStructure( CodeBase &base );

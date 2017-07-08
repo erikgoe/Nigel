@@ -20,16 +20,15 @@ namespace nigel
 		std::stack<std::shared_ptr<AstBlock>> blockStack;//Stack of blocks
 		std::shared_ptr<AstExpr> lValue;//Current lValue
 		std::stack<std::shared_ptr<AstExpr>> exprStack;//Stack of expressions to handle (e. g. for parenthesis)
+		bool expectValue = false;//If a variable is expected. E. g. after operator
+		size_t openParenthesisCount = 0;
 
 		CodeBase *base;
 		std::shared_ptr<Token> currToken;
 		std::shared_ptr<Token> lastToken;
 
-		std::list<std::shared_ptr<CompileNotification>> notificationList;
 
 
-
-		void generateNotification( NT error, std::shared_ptr<Token> token );
 		std::shared_ptr<Token> next();
 			//Skips all tokens until the semicolon
 		void ignoreExpr();
@@ -43,7 +42,11 @@ namespace nigel
 
 		ExecutionResult onExecute( CodeBase &base ) override;
 
+	private:
 		std::shared_ptr<AstExpr> resolveNextExpr();
+
+		//Splits to the most right atomic expr with a same or higher priority from the lValue
+		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstReturning> cExpr, int priority );
 
 	};
 }

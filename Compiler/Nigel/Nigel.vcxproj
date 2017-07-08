@@ -155,6 +155,7 @@
     <ClInclude Include="HelperDefinitions.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Linker.h" />
+    <ClInclude Include="Preprocessor.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Token.h" />
     <ClInclude Include="Version.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Linker.cpp" />
     <ClCompile Include="Nigel.cpp" />
+    <ClCompile Include="Preprocessor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

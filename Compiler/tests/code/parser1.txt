@@ -1,5 +1,0 @@
-byte a = 2;
-byte b = 5;
-byte c = 1;
-byte d;
-d = a + b+c;

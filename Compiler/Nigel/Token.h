@@ -11,6 +11,7 @@ namespace nigel
 	public:
 		enum class Type
 		{
+			empty,
 			eof,//End of file
 			ppEnd,//end of preprocessor directive
 
@@ -18,7 +19,9 @@ namespace nigel
 			function,
 			type_byte,
 			type_int,
-			unsigned_type,
+			unsigned_attr,
+			fast_attr,
+			norm_attr,
 			cf_if,
 			cf_else,
 			cf_while,
@@ -37,12 +40,6 @@ namespace nigel
 			op_mul,// *
 			op_div,// /
 			op_mod,// %
-			op_add_set,// +=
-			op_sub_set,// -=
-			op_mul_set,// *=
-			op_div_set,// /=
-			op_mod_set,// %=
-			op_set,// =
 			op_eql,// ==
 			op_not_eql,// !=
 			op_less,// <
@@ -51,18 +48,25 @@ namespace nigel
 			op_more_eql,// >=
 			op_shift_left,// <<
 			op_shift_right,// >>
-			op_shift_left_set,// <<=
-			op_shift_right_set,// >>=
 			op_not,// !
 			op_and,// &
-			op_and_set,// &=
 			op_and_log,// &&
 			op_or,// |
-			op_or_set,// |=
 			op_or_log,// ||
 			op_xor,// ^
-			op_xor_set,// ^=
 			op_inv,// ~
+			op_set,// =
+			op_set_get,// = (The operation is itselve a returning, so it has to copy the value into the acc)
+			op_add_set,// +=
+			op_sub_set,// -=
+			op_mul_set,// *=
+			op_div_set,// /=
+			op_mod_set,// %=
+			op_shift_left_set,// <<=
+			op_shift_right_set,// >>=
+			op_and_set,// &=
+			op_or_set,// |=
+			op_xor_set,// ^=
 			op_inc,// ++
 			op_dec,// --
 
@@ -87,11 +91,12 @@ namespace nigel
 			comment,
 
 			count
-		} type;
+		} type = Type::empty;
 
 		size_t lineNo = 0;//Line in the code file
 		size_t columnNo = 0;//Column in the code file
-
+		std::shared_ptr<String> line;//Line of code (as text)
+		std::shared_ptr<fs::path> path;//Path of the file
 
 
 		Token( Type type )
@@ -111,8 +116,8 @@ namespace nigel
 			//Returns true if this token is a operator token
 		bool isOperator() const
 		{
-			return type == Type::op_add || type == Type::op_sub || type == Type::op_mul || type == Type::op_div || type == Type::op_mod || type == Type::op_add_set || type == Type::op_sub_set || type == Type::op_mul_set || type == Type::op_div_set || type == Type::op_mod_set || type == Type::op_set || type == Type::op_eql || type == Type::op_not_eql ||
-				type == Type::op_less || type == Type::op_more || type == Type::op_less_eql || type == Type::op_more_eql || type == Type::op_shift_left || type == Type::op_shift_right || type == Type::op_shift_left_set || type == Type::op_shift_right_set || type == Type::op_not || type == Type::op_and || type == Type::op_and_set || type == Type::op_and_log || type == Type::op_or || type == Type::op_or_set || type == Type::op_or_log || type == Type::op_xor || type == Type::op_xor_set || type == Type::op_inv;
+			return type == Type::op_add || type == Type::op_sub || type == Type::op_mul || type == Type::op_div || type == Type::op_mod || type == Type::op_add_set || type == Type::op_sub_set || type == Type::op_mul_set || type == Type::op_div_set || type == Type::op_mod_set || type == Type::op_set || type == Type::op_set_get || type == Type::op_eql || type == Type::op_not_eql ||
+				type == Type::op_less || type == Type::op_more || type == Type::op_less_eql || type == Type::op_more_eql || type == Type::op_shift_left || type == Type::op_shift_right || type == Type::op_shift_left_set || type == Type::op_shift_right_set || type == Type::op_not || type == Type::op_and || type == Type::op_and_set || type == Type::op_and_log || type == Type::op_or || type == Type::op_or_set || type == Type::op_or_log || type == Type::op_xor || type == Type::op_xor_set || type == Type::op_inv || type == Type::op_inc || type == Type::op_dec;
 		}
 	};
 	class Token_NumberL : public Token
