@@ -13,15 +13,22 @@ namespace nigel
 		clr_a = 0xE4,
 
 		mov_a_const = 0x74,
-		mov_adr_const = 0x75,
 		mov_a_adr = 0xE5,
-		mov_adr_a = 0xF5,
-		mov_adr_adr = 0x85,//rVal and lVal are reverse ordered
-		mov_r0_a = 0xF8,
-		mov_r0_const = 0x78,
-		mov_r0_adr = 0xA8,
 		mov_a_r0 = 0xE8,
+		mov_a_atr0 = 0xE6,
+		mov_a_atr1 = 0xE7,
+		mov_adr_const = 0x75,
+		mov_adr_a = 0xF5,
 		mov_adr_r0 = 0x88,
+		mov_adr_atr0 = 0x86,
+		mov_adr_adr = 0x85,//rVal and lVal are reverse ordered
+		mov_r0_const = 0x78,
+		mov_r0_a = 0xF8,
+		mov_r0_adr = 0xA8,
+		mov_atr0_const = 0x76,
+		mov_atr0_a = 0xF6,
+		mov_atr1_a = 0xF7,
+		mov_atr0_adr = 0xA6,
 		mov_dptr_const = 0x90,
 		movx_a_dptr = 0xE0,
 		movx_dptr_a = 0xF0,
@@ -31,6 +38,10 @@ namespace nigel
 
 		xch_a_r0 = 0xC8,
 		xch_r0_a = 0xC8,
+		xch_a_r1 = 0xC9,
+		xch_r1_a = 0xC9,
+		xch_a_atr0 = 0xD6,
+		xch_atr0_a = 0xD6,
 		xch_a_adr = 0xC5,
 		xch_adr_a = 0xC5,
 
@@ -39,9 +50,11 @@ namespace nigel
 		add_a_const = 0x24,
 		add_a_adr = 0x25,
 		add_a_r0 = 0x28,
+		add_a_atr0 = 0x26,
 		sub_a_const = 0x94,
 		sub_a_adr = 0x95,
 		sub_a_r0 = 0x98,
+		sub_a_atr0 = 0x96,
 		mul_a_b = 0xA4,
 		div_a_b = 0x84,
 
@@ -52,10 +65,14 @@ namespace nigel
 
 		and_a_const = 0x54,
 		and_a_adr = 0x55,
+		and_a_atr0 = 0x56,
 		or_a_const = 0x44,
 		or_a_adr = 0x45,
+		or_a_atr0 = 0x46,
 		xor_a_const = 0x64,
 		xor_a_adr = 0x65,
+		xor_a_atr0 = 0x66,
+
 		cpl_a = 0xF4,
 
 		count
@@ -119,6 +136,10 @@ namespace nigel
 		{
 			return std::make_shared<EIR_Constant>( ast->token->as<Token_NumberL>()->number );
 		}
+		static std::shared_ptr<EIR_Constant> fromConstant( u8 value )
+		{
+			return std::make_shared<EIR_Constant>( value );
+		}
 
 		EIR_Constant( u8 data ) : EIR_Operator( EIR_Operator::Type::constant )
 		{
@@ -134,6 +155,7 @@ namespace nigel
 		{
 			A = 0xE0,//Accumulator-register
 			B = 0xF0,//B-register
+			SP = 0x81,//Stack pointer
 
 			count
 		};

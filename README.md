@@ -71,8 +71,8 @@ The Compiler is splitted in these parts:
 The resulting Hex code can be burned onto a 8051 microcontroller or be interpreted in a simulator.
 
 ## Current state
-- [x] Preprocessor
 - [x] Compiler structure
+- [x] Preprocessor
 - [x] Lexer
 - [x] AST Parser
 - [x] EIR Parser
@@ -84,6 +84,7 @@ The resulting Hex code can be burned onto a 8051 microcontroller or be interpret
 * 16+ types
 * ptr
 * 'Magic addresses' of the microcontroller (ports, etc.)
+* functions
 
 ## Installation
 1. Install Visual Studio (tested with VC 2017).

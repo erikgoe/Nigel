@@ -22,7 +22,6 @@ namespace nigel
 		while( next()->type != TT::tok_semicolon );
 		lValue = nullptr;
 		expectValue = false;
-		while( !exprStack.empty() ) exprStack.pop();//todo check
 	}
 
 	void AST_Parser::printAST( CodeBase & base )
@@ -41,7 +40,7 @@ namespace nigel
 		if( ast->type == AstExpr::Type::block )
 		{//Print block content
 			out = tabs + "<BLOCK>";
-			for( auto v : ast->as<AstBlock>()->variables )
+			for( auto v : ast->as<AstBlock>()->newVariables )
 			{
 				out += "\n " + tabs + "<VAR_D> " + v.first;
 			}
@@ -159,7 +158,6 @@ namespace nigel
 		while( !finishedParsing )//Iterate the lexer
 		{
 			std::shared_ptr<AstExpr> expr = resolveNextExpr();
-			//if( expr != nullptr ) base.globalAst->content.push_back( expr );
 		}
 
 		bool hasError = false;
@@ -184,7 +182,8 @@ namespace nigel
 			newAst->token = token;
 			newAst->lVal = std::make_shared<AstVariable>();//Create new variable
 			newAst->lVal->retType = BasicType::tByte;
-			newAst->lVal->model = base->memModel;//todo changable with keywords
+			newAst->lVal->model = base->memModel;
+			if( blockStack.top() != base->globalAst ) newAst->lVal->model = MemModel::stack;
 
 			//Get name of variable
 			std::shared_ptr<Token> valName = next();
@@ -197,31 +196,24 @@ namespace nigel
 			else newAst->lVal->name = valName->as<Token_Identifier>()->identifier;
 			newAst->lVal->token = valName;
 
-			//Save variable in current block
-			if( blockStack.top()->variables.find( newAst->lVal->name ) != blockStack.top()->variables.end() )
+			//Check if variable already exists
+			bool found = false;
+			for( auto &v : blockStack.top()->newVariables ) if( v.first == newAst->lVal->name )
 			{
-				generateNotification( NT::err_variableAlreadyDefined, valName );
+				found = true;
+				break;
 			}
-			else blockStack.top()->variables[newAst->lVal->name] = newAst->lVal;
+			//Save variable in current block
+			if( found ) generateNotification( NT::err_variableAlreadyDefined, valName );
+			else
+			{
+				blockStack.top()->variables.push_front( VariableBinding( newAst->lVal->name, newAst->lVal ) );
+				blockStack.top()->newVariables.push_front( VariableBinding( newAst->lVal->name, newAst->lVal ) );
+			}
+
 
 			lValue = newAst->lVal;
 
-			//Skip equal sign but print error if none found
-			/*std::shared_ptr<Token> eqlSign = next();
-			if( eqlSign->type == TT::op_set )
-			{
-				//Resolve rValue as retuning expression
-				newAst->rVal = resolveNextExpr();
-				if( !newAst->rVal->isTypeReturnable() )
-				{
-					generateNotification( NT::err_expectedExprWithReturnValue_atAllocation, currToken );
-					ignoreExpr();
-					return nullptr;
-				}
-			}*/
-
-
-			//base->globalAst->content.push_back( newAst );//Add to ast
 			return newAst;
 		}
 		if( token->type == TT::fast_attr )
@@ -308,12 +300,20 @@ namespace nigel
 			/*if( openParenthesisCount > 0 && lValue != nullptr )
 				generateNotification( NT::err_unexpectedIdentifierInParenthesis, token );*/
 
-			if( blockStack.top()->variables.find( identifier ) == blockStack.top()->variables.end() )
+			bool found = false;
+			VariableBinding bind;
+			for( auto &v : blockStack.top()->variables ) if( v.first == identifier )
+			{
+				found = true;
+				bind = v;
+				break;
+			}
+			if( !found )
 			{
 				generateNotification( NT::err_undefinedIdentifier, token );
 				newAst = std::make_shared<AstVariable>();
 			}
-			else newAst = blockStack.top()->variables[identifier];
+			else newAst = bind.second;
 			newAst->token = token;
 
 			/*if( lastToken->type == TT::identifier )
@@ -425,8 +425,7 @@ namespace nigel
 		}
 		else if( token->type == TT::tok_parenthesis_open )
 		{//Open a new parenthesis
-			openParenthesisCount++;
-			size_t myOpenParenthesisNr = openParenthesisCount;
+			size_t myOpenParenthesisNr = ++openParenthesisCount;
 			std::shared_ptr<AstParenthesis> newAst = std::make_shared<AstParenthesis>();
 			newAst->token = token;
 
@@ -437,7 +436,7 @@ namespace nigel
 			}*/
 			//todo check for parBlock & also in indetifier
 			if( lValue != nullptr )
-			{//Check if hast lValue
+			{//Check if has lValue
 				generateNotification( NT::err_unexpectedReturningBeforeParenthesisBlock, currToken );
 				ignoreExpr();
 				return nullptr;
@@ -489,18 +488,54 @@ namespace nigel
 
 			return nullptr;
 		}
+		else if( token->type == TT::tok_brace_open )
+		{
+			size_t myOpenBraceNr = ++openBraceCount;
+			std::shared_ptr<AstBlock> newAst = std::make_shared<AstBlock>();
+
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeBlock, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+
+			newAst->variables.insert( newAst->variables.begin(), blockStack.top()->variables.begin(), blockStack.top()->variables.end() );
+			blockStack.push( newAst );
+
+			while( myOpenBraceNr <= openBraceCount )//Iterate for this block
+			{
+				std::shared_ptr<AstExpr> expr = resolveNextExpr();
+			}
+
+			if( openParenthesisCount > 0 ) generateNotification( NT::err_aParenthesisWasNotClosed, token );
+			lValue = nullptr;
+			expectValue = false;
+
+			blockStack.pop();
+			blockStack.top()->content.push_back( newAst );
+
+			return newAst;
+		}
+		else if( token->type == TT::tok_brace_close )
+		{
+			if( openBraceCount <= 0 ) generateNotification( NT::err_unexpectedCloseOfBlock, token );
+			else openBraceCount--;
+
+			return nullptr;
+		}
 		else if( token->type == TT::tok_semicolon )
 		{//End of expression
 			if( openParenthesisCount > 0 ) generateNotification( NT::err_aParenthesisWasNotClosed, token );
 			if( lValue != nullptr )
-				base->globalAst->content.push_back( lValue );//Add to ast
+				blockStack.top()->content.push_back( lValue );//Add to ast
 			lValue = nullptr;
 			expectValue = false;
-			while( !exprStack.empty() ) exprStack.pop();//todo check
 			return nullptr;//Finish expression
 		}
 		else if( token->type == TT::eof )
 		{//End of file
+			if( openBraceCount > 0 ) generateNotification( NT::err_aBlockWasNotClosed, token );
 			finishedParsing = true;//Finish file processing
 			if( lValue != nullptr ) generateNotification( NT::err_reachedEOF_unfinishedExpression, currToken );
 			return nullptr;

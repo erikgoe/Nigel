@@ -20,7 +20,7 @@ namespace nigel
 			std::list<std::shared_ptr<BuilderExecutable>> e;
 			e.push_back( std::make_shared<Preprocessor>() );
 			e.push_back( std::make_shared<Lexer>() );
-			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "lexer [--pl] --c [sourcePath] --o [destinationPath]", e );
+			builderTasks["lexer"] = std::make_shared<BuilderTask>( "Lexer", "Creates the lexer-structure from a soucecode file.", "lexer [-b] [--pl] --c [sourcePath] --o [destinationPath]", e );
 		}
 		{//Builder
 			std::list<std::shared_ptr<BuilderExecutable>> e;
@@ -29,7 +29,7 @@ namespace nigel
 			e.push_back( std::make_shared<AST_Parser>() );
 			e.push_back( std::make_shared<EIR_Parser>() );
 			e.push_back( std::make_shared<Linker>() );
-			builderTasks["build"] = std::make_shared<BuilderTask>( "Builder", "Creates a hex file from a soucecode file.", "build [--pl] [--pa] [--pe] --c [sourcePath] --o [destinationPath]", e );
+			builderTasks["build"] = std::make_shared<BuilderTask>( "Builder", "Creates a hex file from a soucecode file.", "build [-b] [--pl] [--pa] [--pe] --c [sourcePath] --o [destinationPath]", e );
 		}
 	}
 
@@ -113,6 +113,7 @@ namespace nigel
 					log( "   pl                     Print lexer structure." );
 					log( "   pa                     Print AST." );
 					log( "   pe                     Print EIR." );
+					log( "   b                      Pause if an error occurred." );
 				}
 			}
 		}
@@ -140,7 +141,7 @@ namespace nigel
 			if( result != ExecutionResult::success )
 			{//Panic
 				log( "An error occurred while processing '" + operation + "'", LogLevel::Error );
-				_getch();//todo remove
+				if( flags.find( 'b' ) != flags.end() ) _getch();
 				return static_cast< int >( result );
 			}
 		}

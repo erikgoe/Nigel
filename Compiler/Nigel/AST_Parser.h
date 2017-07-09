@@ -19,9 +19,9 @@ namespace nigel
 		bool finishedParsing = false;
 		std::stack<std::shared_ptr<AstBlock>> blockStack;//Stack of blocks
 		std::shared_ptr<AstExpr> lValue;//Current lValue
-		std::stack<std::shared_ptr<AstExpr>> exprStack;//Stack of expressions to handle (e. g. for parenthesis)
 		bool expectValue = false;//If a variable is expected. E. g. after operator
 		size_t openParenthesisCount = 0;
+		size_t openBraceCount = 0;
 
 		CodeBase *base;
 		std::shared_ptr<Token> currToken;

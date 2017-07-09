@@ -56,6 +56,10 @@ namespace nigel
 						base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
 						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 					}
+					else if( op->model == MemModel::stack )
+					{
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
+					}
 				}
 				else if( c->op1->type == EIR_Operator::Type::sfr )
 				{//Write sfr register
@@ -76,6 +80,10 @@ namespace nigel
 					else if( op->model == MemModel::large )
 					{
 						base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
+						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
+					}
+					else if( op->model == MemModel::stack )
+					{
 						base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 					}
 				}

@@ -23,6 +23,14 @@ namespace nigel
 		else return comb;
 	}
 
+	u8 EIR_Parser::sizeOfType( BasicType type )
+	{
+		return type == BasicType::tByte ? 8 :
+			type == BasicType::tInt ? 16 :
+			type == BasicType::tUbyte ? 8 :
+			type == BasicType::tUint ? 16 : 0;
+	}
+
 	void EIR_Parser::printEIR( CodeBase & base )
 	{
 		log( "EIR:\n#VARDEF" );
@@ -92,12 +100,8 @@ namespace nigel
 		std::map<String, std::shared_ptr<EIR_Variable>> varList;
 
 		for( auto &v : base.globalAst->variables )
-		{//Add all list of the global block.
-			varList[v.first] = EIR_Variable::getNew(
-				v.second->retType == BasicType::tByte ? 8 :
-				v.second->retType == BasicType::tInt ? 16 :
-				v.second->retType == BasicType::tUbyte ? 8 :
-				v.second->retType == BasicType::tUint ? 16 : 0 );
+		{//Add all variables of the global block.
+			varList[v.first] = EIR_Variable::getNew( sizeOfType( v.second->retType ) );
 			varList[v.first]->model = v.second->model;
 			base.eirValues[varList[v.first]->id] = varList[v.first];
 		}
@@ -121,7 +125,39 @@ namespace nigel
 	}
 	void EIR_Parser::parseAst( std::shared_ptr<AstExpr> ast, std::map<String, std::shared_ptr<EIR_Variable>> varList )
 	{
-		if( ast->type == AstExpr::Type::allocation )
+		if( ast->type == AstExpr::Type::block )
+		{
+			std::shared_ptr<AstBlock> a = ast->as<AstBlock>();
+			std::map<String, std::shared_ptr<EIR_Variable>> localVarList;
+
+			localVarList.insert( varList.begin(), varList.end() );
+			u8 stackInc = 0;
+			for( auto &v : a->newVariables )
+			{
+				localVarList[v.first] = EIR_Variable::getNew( sizeOfType( v.second->retType ) );
+				localVarList[v.first]->model = MemModel::stack;
+				localVarList[v.first]->address = stackInc + 1;
+				stackInc += sizeOfType( v.second->retType ) / 8;
+			}
+			//Subtract final stack increase.
+			for( auto &v : a->newVariables ) localVarList[v.first]->address -= stackInc;
+
+			//Increment SP
+			addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+			addCmd( HexOp::add_a_const, EIR_Constant::fromConstant( stackInc ) );
+			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+
+			for( auto &a : a->content )
+			{//Iterate the ast.
+				parseAst( a, localVarList );
+			}
+
+			//Decrement SP
+			addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+			addCmd( HexOp::add_a_const, EIR_Constant::fromConstant( ~stackInc + 1 ) );
+			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+		}
+		else if( ast->type == AstExpr::Type::allocation )
 		{//Allocate a variable
 			std::shared_ptr<AstAllocation> a = ast->as<AstAllocation>();
 			std::shared_ptr<EIR_Command> newCmd = std::make_shared<EIR_Command>();
@@ -207,12 +243,12 @@ namespace nigel
 			}
 			else if( a->op == Token::Type::op_add )
 			{// +
-				generateOperation( comb, HexOp::add_a_adr, HexOp::add_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::add_a_adr, HexOp::add_a_const, HexOp::add_a_atr0, lOp, rOp, a->token );
 			}
 			else if( a->op == Token::Type::op_sub )
 			{// -
 				addCmd( HexOp::clr_c );
-				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
 			}
 			else if( a->op == Token::Type::op_mul )
 			{// *
@@ -232,15 +268,15 @@ namespace nigel
 			}
 			else if( a->op == Token::Type::op_and )
 			{// &
-				generateOperation( comb, HexOp::and_a_adr, HexOp::and_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::and_a_adr, HexOp::and_a_const, HexOp::and_a_atr0, lOp, rOp, a->token );
 			}
 			else if( a->op == Token::Type::op_or )
 			{// |
-				generateOperation( comb, HexOp::or_a_adr, HexOp::or_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::or_a_adr, HexOp::or_a_const, HexOp::or_a_atr0, lOp, rOp, a->token );
 			}
 			else if( a->op == Token::Type::op_xor )
 			{// ^
-				generateOperation( comb, HexOp::xor_a_adr, HexOp::xor_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::xor_a_adr, HexOp::xor_a_const, HexOp::xor_a_atr0, lOp, rOp, a->token );
 			}
 			else if( a->op == Token::Type::op_shift_left )
 			{// <<
@@ -274,13 +310,13 @@ namespace nigel
 
 			else if( a->op == Token::Type::op_add_set )
 			{// +=
-				generateOperation( comb, HexOp::add_a_adr, HexOp::add_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::add_a_adr, HexOp::add_a_const, HexOp::add_a_atr0, lOp, rOp, a->token );
 				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_sub_set )
 			{// -=
 				addCmd( HexOp::clr_c );
-				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
 				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_mul_set )
@@ -304,17 +340,17 @@ namespace nigel
 			}
 			else if( a->op == Token::Type::op_and_set )
 			{// &=
-				generateOperation( comb, HexOp::and_a_adr, HexOp::and_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::and_a_adr, HexOp::and_a_const, HexOp::and_a_atr0, lOp, rOp, a->token );
 				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_or_set )
 			{// |=
-				generateOperation( comb, HexOp::or_a_adr, HexOp::or_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::or_a_adr, HexOp::or_a_const, HexOp::or_a_atr0, lOp, rOp, a->token );
 				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_xor_set )
 			{// ^=
-				generateOperation( comb, HexOp::xor_a_adr, HexOp::xor_a_const, lOp, rOp, a->token );
+				generateOperation( comb, HexOp::xor_a_adr, HexOp::xor_a_const, HexOp::xor_a_atr0, lOp, rOp, a->token );
 				generateSetAfterOp( setRValTerm( comb ), lOp, a->lVal->token );
 			}
 			else if( a->op == Token::Type::op_shift_left_set )
@@ -396,7 +432,7 @@ namespace nigel
 					else if( ot == OT::c ) comb = OC::cc;
 					else if( ot == OT::t ) comb = OC::ct;
 
-					generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, std::make_shared<EIR_Constant>( 0 ), op, a->token );
+					generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, std::make_shared<EIR_Constant>( 0 ), op, a->token );
 				}
 				else if( a->token->type == Token::Type::op_add )
 				{// + //Ignore this operation and do nothing
@@ -471,6 +507,17 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_dptr_a );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				generateLoadStackR0( lOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_adr, rOp );
+					addCmd( HexOp::mov_atr0_a );
+				}
+				else addCmd( HexOp::mov_atr0_adr, rOp );
+			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
 					 rOp->as<EIR_Variable>()->model == MemModel::large )
 			{
@@ -485,6 +532,41 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_dptr_a );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_dptr_const, rOp );
+				addCmd( HexOp::movx_a_dptr );
+				addCmd( HexOp::mov_atr0_a );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_atr0 );
+					addCmd( HexOp::mov_adr_a, lOp );
+				}
+				else addCmd( HexOp::mov_adr_atr0, rOp );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_a_atr0 );
+				addCmd( HexOp::mov_dptr_const, lOp );
+				addCmd( HexOp::movx_dptr_a );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				generateLoadStackR1( lOp );
+				addCmd( HexOp::mov_a_atr0 );
+				addCmd( HexOp::mov_atr1_a );
 			}
 		}
 		else if( comb == OC::vc )
@@ -504,6 +586,16 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_dptr_a );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_const, rOp );
+					addCmd( HexOp::mov_atr0_a );
+				}
+				else addCmd( HexOp::mov_atr0_const, rOp );
+			}
 		}
 		else if( comb == OC::vt )
 		{
@@ -522,6 +614,16 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_dptr_a );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				if( copyInAcc )
+				{
+					addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+					addCmd( HexOp::mov_atr0_a );
+				}
+				else addCmd( HexOp::mov_atr0_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
 		}
 		else generateNotification( NT::err_cannotSetAConstantLiteral, lValToken );
 	}
@@ -539,11 +641,16 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_dptr_a );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_atr0_a );
+			}
 		}
 		else generateNotification( NT::err_cannotSetAConstantLiteral, lValToken );
 	}
 
-	void EIR_Parser::generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token )
+	void EIR_Parser::generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, HexOp op_atr0, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token )
 	{
 		if( comb == OC::vv )
 		{
@@ -560,6 +667,13 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( op_val, rOp );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+				rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_a_atr0 );
+				addCmd( op_val, rOp );
+			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
 					 rOp->as<EIR_Variable>()->model == MemModel::large )
 			{
@@ -567,7 +681,7 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 				addCmd( HexOp::mov_a_adr, lOp );
-				addCmd( op_val ), EIR_SFR::getSFR( EIR_SFR::SFR::B );
+				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
 					 rOp->as<EIR_Variable>()->model == MemModel::large )
@@ -578,6 +692,39 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_dptr_const, rOp );
+				addCmd( HexOp::movx_a_dptr );
+				addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_a_atr0 );
+				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_a_adr, lOp );
+				addCmd( op_atr0 );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_dptr_const, lOp );
+				addCmd( HexOp::movx_a_dptr );
+				addCmd( op_atr0 );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				generateLoadStackR1( lOp );
+				addCmd( HexOp::mov_a_atr1 );
+				addCmd( op_atr0 );
 			}
 		}
 		else if( comb == OC::vc )
@@ -593,6 +740,12 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( op_const, rOp );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_a_atr0 );
+				addCmd( op_const, rOp );
+			}
 		}
 		else if( comb == OC::vt )
 		{
@@ -605,6 +758,12 @@ namespace nigel
 			{
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_a_dptr );
+				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_a_atr0 );
 				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
 		}
@@ -622,6 +781,12 @@ namespace nigel
 				addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 				addCmd( HexOp::mov_a_const, lOp );
 				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
+			else if( rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_a_const, lOp );
+				addCmd( op_atr0 );
 			}
 		}
 		else if( comb == OC::cc )
@@ -648,6 +813,11 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( HexOp::xch_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 				addCmd( op_val, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
+			else if( rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( op_atr0 );
 			}
 		}
 		else if( comb == OC::tc )
@@ -677,6 +847,13 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( HexOp::mov_adr_adr, rOp, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+				rOp->as<EIR_Variable>()->model == MemModel::fast )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_adr_adr, rOp, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_a_atr0 );
+			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
 					 rOp->as<EIR_Variable>()->model == MemModel::large )
 			{
@@ -694,6 +871,38 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_a_dptr );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::large )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_dptr_const, rOp );
+				addCmd( HexOp::movx_a_dptr );
+				addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_a_atr0 );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::fast &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_adr_atr0, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_a_adr, lOp );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_adr_atr0, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_dptr_const, lOp );
+				addCmd( HexOp::movx_a_dptr );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack &&
+					 rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_adr_atr0, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_a_atr0 );
+			}
 		}
 		else if( comb == OC::vc )
 		{
@@ -708,6 +917,12 @@ namespace nigel
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_a_dptr );
 			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_adr_const, EIR_SFR::getSFR( EIR_SFR::SFR::B ), rOp );
+				addCmd( HexOp::mov_a_atr0 );
+			}
 		}
 		else if( comb == OC::vt )
 		{
@@ -719,6 +934,11 @@ namespace nigel
 			{
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_a_dptr );
+			}
+			else if( lOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( lOp );
+				addCmd( HexOp::mov_a_atr0 );
 			}
 		}
 		else if( comb == OC::cv )
@@ -733,6 +953,12 @@ namespace nigel
 				addCmd( HexOp::mov_adr_const, rOp, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 				addCmd( HexOp::mov_dptr_const, lOp );
 				addCmd( HexOp::movx_a_dptr );
+			}
+			else if( rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_adr_atr0, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				addCmd( HexOp::mov_a_const, lOp );
 			}
 		}
 		else if( comb == OC::cc )
@@ -758,6 +984,12 @@ namespace nigel
 				addCmd( HexOp::movx_a_dptr );
 				addCmd( HexOp::xch_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
+			else if( rOp->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				addCmd( HexOp::xch_a_r0 );
+				generateLoadStackR0( rOp );
+				addCmd( HexOp::mov_adr_atr0, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
 		}
 		else if( comb == OC::tc )
 		{
@@ -778,6 +1010,11 @@ namespace nigel
 			{
 				addCmd( HexOp::mov_dptr_const, op );
 				addCmd( HexOp::movx_a_dptr );
+			}
+			else if( op->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( op );
+				addCmd( HexOp::mov_a_atr0 );
 			}
 		}
 		else if( ot == OT::c )
@@ -805,6 +1042,14 @@ namespace nigel
 				for( int i = 0 ; i < iterations ; i++ )
 					addCmd( op_acc );
 				if( changeValue ) addCmd( HexOp::movx_dptr_a );
+			}
+			else if( op->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( op );
+				addCmd( HexOp::mov_a_atr0, op );
+				for( int i = 0 ; i < iterations ; i++ )
+					addCmd( op_acc );
+				if( changeValue ) addCmd( HexOp::mov_atr0_a );
 			}
 		}
 		else if( comb == OT::c )
@@ -840,6 +1085,13 @@ namespace nigel
 				addCmd( HexOp::movx_dptr_a );
 				addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
+			else if( op->as<EIR_Variable>()->model == MemModel::stack )
+			{
+				generateLoadStackR0( op );
+				addCmd( HexOp::mov_a_atr0 );
+				addCmd( op_acc );
+				addCmd( HexOp::xch_a_atr0 );
+			}
 		}
 		else if( comb == OT::c )
 		{
@@ -851,6 +1103,22 @@ namespace nigel
 		{
 			addCmd( op_acc );
 		}
+	}
+
+	void EIR_Parser::generateLoadStackR0( std::shared_ptr<EIR_Operator> op )
+	{
+		addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+		addCmd( HexOp::clr_c );
+		addCmd( HexOp::sub_a_const, op );
+		addCmd( HexOp::xch_a_r0 );
+	}
+
+	void EIR_Parser::generateLoadStackR1( std::shared_ptr<EIR_Operator> op )
+	{
+		addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+		addCmd( HexOp::clr_c );
+		addCmd( HexOp::sub_a_const, op );
+		addCmd( HexOp::xch_a_r1 );
 	}
 
 	std::shared_ptr<EIR_Command> EIR_Parser::generateCmd( HexOp operation, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp )

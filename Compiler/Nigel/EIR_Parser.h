@@ -44,6 +44,9 @@ namespace nigel
 		//Set the rValue to term. Useful for second operations e. g. '+='
 		OperationCombination setRValTerm( OperationCombination comb );
 
+		//Returns the size of a specific type
+		u8 sizeOfType( BasicType type );
+
 		//Writes the EIR into the console.
 		void printEIR( CodeBase &base );
 
@@ -63,8 +66,8 @@ namespace nigel
 		//Generate a move operation after another operation. This will minimize the needed code.
 		void generateSetAfterOp( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<Token> lValToken );
 
-		//Generate a arithmetic operation. \p op_val: hexcode for operation with a variable into acc, \p op_const: hexcode for operation with a constant into acc.
-		void generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );
+		//Generate a arithmetic operation. \p op_val: hexcode for operation with a variable into acc, \p op_const: hexcode for operation with a constant into acc, \p op_atr0: hexcode for operation with a stack value (revered by r0) into acc.
+		void generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, HexOp op_atr0, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );
 
 		//Generate a move operation
 		void EIR_Parser::generateMoveAB( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );
@@ -77,6 +80,13 @@ namespace nigel
 
 		//Generate a unary right operation. \p op_acc: hexcode for operation in the acc.
 		void generateUnaryROperation( OperationType comb, HexOp op_acc, std::shared_ptr<EIR_Operator> op, std::shared_ptr<Token> token );
+
+		//Resolve a SP-relative address and save it to r0
+		void generateLoadStackR0( std::shared_ptr<EIR_Operator> op );
+
+		//Resolve a SP-relative address and save it to r1
+		void generateLoadStackR1( std::shared_ptr<EIR_Operator> op );
+
 
 		//Generates a command
 		static std::shared_ptr<EIR_Command> generateCmd( HexOp operation, std::shared_ptr<EIR_Operator> lOp = nullptr, std::shared_ptr<EIR_Operator> rOp = nullptr );

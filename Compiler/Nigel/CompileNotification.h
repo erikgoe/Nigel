@@ -42,6 +42,7 @@ namespace nigel
 			err_unexpectedReturningBeforeIdentifier,
 			err_unexpectedReturningBeforeLiteral,
 			err_unexpectedReturningBeforeParenthesisBlock,
+			err_unexpectedReturningBeforeBlock,
 			err_expectedIdentifierBeforeOperator,
 			err_expectedIdentifierAfterOperator,
 			err_expectedExprWithReturnValue_atOperation,
@@ -60,6 +61,8 @@ namespace nigel
 			err_unexpectedCloseOfParenthesis,
 			err_aParenthesisWasNotClosed,
 
+			err_unexpectedCloseOfBlock,
+			err_aBlockWasNotClosed,
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 

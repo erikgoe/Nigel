@@ -43,13 +43,16 @@ namespace nigel
 	//Class deklaration
 	class AstVariable;
 
+	using VariableBinding = std::pair<String, std::shared_ptr<AstVariable>>;
+
 		//Bock of linear executable expressions
 	class AstBlock : public AstExpr
 	{
 	public:
 		String name;//Block name
 		std::list<std::shared_ptr<AstExpr>> content;
-		std::map<String, std::shared_ptr<AstVariable>> variables;
+		std::list<VariableBinding> variables;//All available variables
+		std::list<VariableBinding> newVariables;//Variables which are declated in this block
 
 		AstBlock() : AstExpr(AstExpr::Type::block) {}
 	};
@@ -68,8 +71,10 @@ namespace nigel
 		//Defines where a variable will be saved.
 	enum class MemModel
 	{
-		fast,
-		large,
+		fast,//Globals in intern ram
+		large,//Globals in extern ram
+		stack,//Locals on stack
+		heap,//Dynamically allocated
 
 		count
 	};

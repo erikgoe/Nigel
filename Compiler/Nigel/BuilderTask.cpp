@@ -102,6 +102,7 @@ namespace nigel
 		notificationTexts[NT::err_unexpectedReturningBeforeIdentifier] = "Unexpected returnable before identifier.";
 		notificationTexts[NT::err_unexpectedReturningBeforeLiteral] = "Unexpected returnable before literal.";
 		notificationTexts[NT::err_unexpectedReturningBeforeParenthesisBlock] = "Unexpected retunrable before parenthesis block.";
+		notificationTexts[NT::err_unexpectedReturningBeforeBlock] = "Unexpected retunrable before block.";
 		notificationTexts[NT::err_expectedIdentifierBeforeOperator] = "Exptected Identifiern before operation.";
 		notificationTexts[NT::err_expectedIdentifierAfterOperator] = "Exptected Identifiern after operation.";
 		notificationTexts[NT::err_expectedExprWithReturnValue_atOperation] = "Expected expression or value as rValue at operation.";
@@ -120,6 +121,9 @@ namespace nigel
 		notificationTexts[NT::err_expectedTermAfterReturnableInParenthesis] = "Expected term after returnable in parenthesis block.";
 		notificationTexts[NT::err_unexpectedCloseOfParenthesis] = "Unexpected closing of parenthesis block.";
 		notificationTexts[NT::err_aParenthesisWasNotClosed] = "A parenthesis block was not closed.";
+
+		notificationTexts[NT::err_unexpectedCloseOfBlock] = "Unexpected closing of block.";
+		notificationTexts[NT::err_aBlockWasNotClosed] = "A block was not closed.";
 
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";
