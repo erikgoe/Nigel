@@ -114,6 +114,7 @@ namespace nigel
 		u32 id = 0;//Unique id of this variable
 		u16 address = 0;//Address in ram, where to store the variable
 		u8 size = 8;//Size of this variable in bits
+		size_t scopeOffset = 0;
 
 		static std::shared_ptr<EIR_Variable> getNew(u8 size)
 		{
@@ -156,6 +157,7 @@ namespace nigel
 			A = 0xE0,//Accumulator-register
 			B = 0xF0,//B-register
 			SP = 0x81,//Stack pointer
+			BR = 0x07,//Block register: special register which points to the begin of the current block, which then points to the begin of the previous block.
 
 			count
 		};

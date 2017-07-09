@@ -101,9 +101,9 @@ namespace nigel
 
 		for( auto &v : base.globalAst->variables )
 		{//Add all variables of the global block.
-			varList[v.first] = EIR_Variable::getNew( sizeOfType( v.second->retType ) );
-			varList[v.first]->model = v.second->model;
-			base.eirValues[varList[v.first]->id] = varList[v.first];
+			varList[v.first.first] = EIR_Variable::getNew( sizeOfType( v.first.second->retType ) );
+			varList[v.first.first]->model = v.first.second->model;
+			base.eirValues[varList[v.first.first]->id] = varList[v.first.first];
 		}
 		for( auto &a : base.globalAst->content )
 		{//Iterate the global ast.
@@ -130,7 +130,13 @@ namespace nigel
 			std::shared_ptr<AstBlock> a = ast->as<AstBlock>();
 			std::map<String, std::shared_ptr<EIR_Variable>> localVarList;
 
-			localVarList.insert( varList.begin(), varList.end() );
+			for( auto &v : varList )
+			{
+				if( v.second->model == MemModel::stack )//Copy if is stack, because the scope offset may change
+					localVarList[v.first] = std::make_shared<EIR_Variable>( *v.second );
+				else localVarList[v.first] = v.second;//Otherwise just copy the reference to prevent linker errors.
+				localVarList[v.first]->scopeOffset++;
+			}
 			u8 stackInc = 0;
 			for( auto &v : a->newVariables )
 			{
@@ -139,11 +145,11 @@ namespace nigel
 				localVarList[v.first]->address = stackInc + 1;
 				stackInc += sizeOfType( v.second->retType ) / 8;
 			}
-			//Subtract final stack increase.
-			for( auto &v : a->newVariables ) localVarList[v.first]->address -= stackInc;
 
 			//Increment SP
+			addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
 			addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
 			addCmd( HexOp::add_a_const, EIR_Constant::fromConstant( stackInc ) );
 			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
 
@@ -156,6 +162,7 @@ namespace nigel
 			addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
 			addCmd( HexOp::add_a_const, EIR_Constant::fromConstant( ~stackInc + 1 ) );
 			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
+			addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
 		}
 		else if( ast->type == AstExpr::Type::allocation )
 		{//Allocate a variable
@@ -1107,17 +1114,25 @@ namespace nigel
 
 	void EIR_Parser::generateLoadStackR0( std::shared_ptr<EIR_Operator> op )
 	{
-		addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
-		addCmd( HexOp::clr_c );
-		addCmd( HexOp::sub_a_const, op );
+		addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
+		for( size_t i = 0 ; i < op->as<EIR_Variable>()->scopeOffset ; i++ )
+		{//Resolve scope offset
+			addCmd( HexOp::xch_a_r0 );
+			addCmd( HexOp::mov_a_atr0 );
+		}
+		addCmd( HexOp::add_a_const, op );
 		addCmd( HexOp::xch_a_r0 );
 	}
 
 	void EIR_Parser::generateLoadStackR1( std::shared_ptr<EIR_Operator> op )
 	{
-		addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
-		addCmd( HexOp::clr_c );
-		addCmd( HexOp::sub_a_const, op );
+		addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
+		for( size_t i = 0 ; i < op->as<EIR_Variable>()->scopeOffset ; i++ )
+		{//Resolve scope offset
+			addCmd( HexOp::xch_a_r1 );
+			addCmd( HexOp::mov_a_atr1 );
+		}
+		addCmd( HexOp::add_a_const, op );
 		addCmd( HexOp::xch_a_r1 );
 	}
 

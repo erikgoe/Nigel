@@ -51,7 +51,7 @@ namespace nigel
 	public:
 		String name;//Block name
 		std::list<std::shared_ptr<AstExpr>> content;
-		std::list<VariableBinding> variables;//All available variables
+		std::list<std::pair<VariableBinding, size_t>> variables;//All available variables. Bindings mapped to their relative scope offset.
 		std::list<VariableBinding> newVariables;//Variables which are declated in this block
 
 		AstBlock() : AstExpr(AstExpr::Type::block) {}
@@ -104,6 +104,16 @@ namespace nigel
 	public:
 		MemModel model = MemModel::large;
 		String name;
+		size_t scopeOffset = 0;//Offset of outer scope. Will be used in MemModel::stack.
+
+		String modelString()
+		{
+			if( model == MemModel::fast ) return "fast";
+			else if( model == MemModel::large ) return "large";
+			else if( model == MemModel::stack ) return "stack";
+			else if( model == MemModel::heap ) return "heap";
+			else return "-!-UNKNOWN-!-";
+		}
 
 		AstVariable() : AstReturning( AstExpr::Type::variable ) {}
 	};

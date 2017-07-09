@@ -7,9 +7,16 @@ byte b = 4;
 byte c = a+b;
 {
 	byte c = 42;
+	byte c2 = 1;
+	byte c3 = 1;
 	c = b;
 	{
 		byte d = 16;
-		b = d;
+		{
+			byte e = 100;
+			c = d;
+			c2 = 42;
+			c3 = e;
+		}
 	}
 }

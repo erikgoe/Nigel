@@ -48,7 +48,11 @@ namespace nigel
 		}
 		else if( ast->type == AstExpr::Type::variable )
 		{//Print variable content
-			out = tabs + "<VAR> " + ast->as<AstVariable>()->name + " : " + ast->as<AstVariable>()->returnTypeString();
+			auto v = ast->as<AstVariable>();
+			out = tabs + "<VAR> " + v->name + " : "
+				+ v->modelString() + " " 
+				+ v->returnTypeString() +
+				( v->model == MemModel::stack ? ", offset = " + to_string( v->scopeOffset ) : "" );
 			log( out );
 		}
 		else if( ast->type == AstExpr::Type::term )
@@ -207,7 +211,7 @@ namespace nigel
 			if( found ) generateNotification( NT::err_variableAlreadyDefined, valName );
 			else
 			{
-				blockStack.top()->variables.push_front( VariableBinding( newAst->lVal->name, newAst->lVal ) );
+				blockStack.top()->variables.push_front( std::pair<VariableBinding, size_t>( VariableBinding(newAst->lVal->name, newAst->lVal), 0 ) );
 				blockStack.top()->newVariables.push_front( VariableBinding( newAst->lVal->name, newAst->lVal ) );
 			}
 
@@ -302,10 +306,12 @@ namespace nigel
 
 			bool found = false;
 			VariableBinding bind;
-			for( auto &v : blockStack.top()->variables ) if( v.first == identifier )
+			size_t scopeOffset = 0;
+			for( auto &v : blockStack.top()->variables ) if( v.first.first == identifier )
 			{
 				found = true;
-				bind = v;
+				bind = v.first;
+				scopeOffset = v.second;
 				break;
 			}
 			if( !found )
@@ -313,8 +319,9 @@ namespace nigel
 				generateNotification( NT::err_undefinedIdentifier, token );
 				newAst = std::make_shared<AstVariable>();
 			}
-			else newAst = bind.second;
+			else newAst = std::make_shared<AstVariable>( *bind.second );
 			newAst->token = token;
+			newAst->scopeOffset = scopeOffset;
 
 			/*if( lastToken->type == TT::identifier )
 			{
@@ -501,6 +508,7 @@ namespace nigel
 			}
 
 			newAst->variables.insert( newAst->variables.begin(), blockStack.top()->variables.begin(), blockStack.top()->variables.end() );
+			for( auto &v : newAst->variables ) v.second++;//Increment scope offset.
 			blockStack.push( newAst );
 
 			while( myOpenBraceNr <= openBraceCount )//Iterate for this block

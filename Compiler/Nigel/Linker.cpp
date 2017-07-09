@@ -8,6 +8,12 @@ namespace nigel
 	}
 	ExecutionResult Linker::onExecute( CodeBase &base )
 	{
+		//Initialize the machine
+		base.hexBuffer.push_back( 0x75 );//mov
+		base.hexBuffer.push_back( 0x07 );//BR/R7
+		base.hexBuffer.push_back( 0x00 );//0
+
+
 		{//Set address of values
 			u16 fastAdr = 0x80;
 			u16 largeAdr = 0;
