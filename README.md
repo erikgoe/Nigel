@@ -79,7 +79,7 @@ The resulting Hex code can be burned onto a 8051 microcontroller or be interpret
 - [x] Linker
 
 ### Next development steps
-* Blocks
+* Boolean expressions
 * Controll flow
 * 16+ types
 * ptr

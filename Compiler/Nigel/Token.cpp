@@ -21,6 +21,8 @@ namespace nigel
 		else if( type == Token::Type::return_fn ) return "return";
 		else if( type == Token::Type::dy_new ) return "new";
 		else if( type == Token::Type::dy_delete ) return "delete";
+		else if( type == Token::Type::literalTrue ) return "true";
+		else if( type == Token::Type::literalFalse ) return "false";
 		else if( type == Token::Type::operatorToken ) return as<Token_Operator>()->operatorToken + ( extended ? "\t\tas unknown operator" : "" );
 		else if( type == Token::Type::op_add ) return "+";
 		else if( type == Token::Type::op_sub ) return "-";

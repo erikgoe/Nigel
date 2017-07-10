@@ -47,6 +47,8 @@ namespace nigel
 			err_expectedIdentifierAfterOperator,
 			err_expectedExprWithReturnValue_atOperation,
 			err_unmatchingTypeFound_atTerm,
+			err_unknownBinaryOperator,
+			err_unknownUnaryOperator,
 
 			err_cannotSetAConstantLiteral,
 			err_onlyConstantsAreAllowedForBitShifts,
@@ -55,6 +57,7 @@ namespace nigel
 
 			err_expectedIdentifierInParenthesis,
 			err_expectedExprWithReturnValue_atParenthesis,
+			err_expectedExprWithBooleanValue_atParenthesis,
 			err_unexpectedLiteralInParenthesis,
 			err_unexpectedIdentifierInParenthesis,
 			err_expectedTermAfterReturnableInParenthesis,
@@ -63,6 +66,10 @@ namespace nigel
 
 			err_unexpectedCloseOfBlock,
 			err_aBlockWasNotClosed,
+
+			err_expectParanthesisAfterIfKeyword,
+			err_expectBlockAfterIf,
+			err_expectBlockAfterElse,
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 

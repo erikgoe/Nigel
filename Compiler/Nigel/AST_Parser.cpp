@@ -50,7 +50,7 @@ namespace nigel
 		{//Print variable content
 			auto v = ast->as<AstVariable>();
 			out = tabs + "<VAR> " + v->name + " : "
-				+ v->modelString() + " " 
+				+ v->modelString() + " "
 				+ v->returnTypeString() +
 				( v->model == MemModel::stack ? ", offset = " + to_string( v->scopeOffset ) : "" );
 			log( out );
@@ -84,6 +84,31 @@ namespace nigel
 			out = tabs + "<PAR> : " + ast->as<AstParenthesis>()->returnTypeString();
 			log( out );
 			printSubAST( ast->as<AstParenthesis>()->content, tabCount + 1 );
+		}
+		else if( ast->type == AstExpr::Type::booleanParanthesis )
+		{//Print boolean parenthesis block content
+			out = tabs + "<BOOLPAR>";
+			log( out );
+			printSubAST( ast->as<AstBooleanParenthesis>()->content, tabCount + 1 );
+		}
+		else if( ast->type == AstExpr::Type::ifStat )
+		{//Print if statement
+			out = tabs + "<IF>";
+			log( out );
+			printSubAST( ast->as<AstIf>()->condition, tabCount + 1 );
+			printSubAST( ast->as<AstIf>()->ifCase, tabCount + 1 );
+			if( ast->as<AstIf>()->elseCase != nullptr )
+			{
+				out = tabs + "<ELSE>";
+				log( out );
+				printSubAST( ast->as<AstIf>()->elseCase, tabCount + 1 );
+			}
+		}
+		else if( ast->type == AstExpr::Type::keywordCondition )
+		{//Print keyword (true/false)
+			if( ast->as<AstKeywordCondition>()->val ) out = tabs + "<TRUE>";
+			else out = tabs + "<FALSE>";
+			log( out );
 		}
 
 
@@ -143,8 +168,6 @@ namespace nigel
 		opPriority[TT::op_inv] = 12;
 		opPriority[TT::op_inc] = 12;
 		opPriority[TT::op_dec] = 12;
-
-		opPriority[TT::tok_parenthesis_open] = 13;//Highest priority todo del
 	}
 
 	ExecutionResult AST_Parser::onExecute( CodeBase &base )
@@ -273,8 +296,23 @@ namespace nigel
 			newAst->retType = BasicType::tByte;
 			newAst->as<AstExpr>()->token = token;
 
-			/*if( openParenthesisCount > 0 && !expectValue )
-				generateNotification( NT::err_unexpectedLiteralInParenthesis, token );*/
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeLiteral, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+			if( !expectValue )
+			{
+				lValue = newAst;//New current value
+			}
+			return newAst;
+		}
+		else if( token->type == TT::literalTrue )
+		{//true literal
+			std::shared_ptr<AstKeywordCondition> newAst = std::make_shared<AstKeywordCondition>();
+			newAst->token = token;
+			newAst->val = true;
 
 			if( lValue != nullptr )
 			{//Check if has lValue
@@ -286,23 +324,30 @@ namespace nigel
 			{
 				lValue = newAst;//New current value
 			}
-			//Test for parent-expr
-			/*std::shared_ptr<AstExpr> parentAst = resolveNextExpr();
-			if( parentAst != nullptr )
-			{
-				parentAst->as<AstTerm>()->lVal = newAst;
-				return parentAst;
+			return newAst;
+		}
+		else if( token->type == TT::literalFalse )
+		{//false literal
+			std::shared_ptr<AstKeywordCondition> newAst = std::make_shared<AstKeywordCondition>();
+			newAst->token = token;
+			newAst->val = false;
+
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeLiteral, currToken );
+				ignoreExpr();
+				return nullptr;
 			}
-			else */
+			if( !expectValue )
+			{
+				lValue = newAst;//New current value
+			}
 			return newAst;
 		}
 		else if( token->type == TT::identifier )
 		{//Identifier at expression
 			String identifier = token->as<Token_Identifier>()->identifier;
 			std::shared_ptr<AstVariable> newAst;
-
-			/*if( openParenthesisCount > 0 && lValue != nullptr )
-				generateNotification( NT::err_unexpectedIdentifierInParenthesis, token );*/
 
 			bool found = false;
 			VariableBinding bind;
@@ -323,11 +368,6 @@ namespace nigel
 			newAst->token = token;
 			newAst->scopeOffset = scopeOffset;
 
-			/*if( lastToken->type == TT::identifier )
-			{
-				generateNotification( NT::err_unexpectedReturningBeforeIdentifier, currToken );
-				ignoreExpr();
-			}*/
 			if( lValue != nullptr )
 			{//Check if has lValue
 				generateNotification( NT::err_unexpectedReturningBeforeIdentifier, currToken );
@@ -433,15 +473,11 @@ namespace nigel
 		else if( token->type == TT::tok_parenthesis_open )
 		{//Open a new parenthesis
 			size_t myOpenParenthesisNr = ++openParenthesisCount;
-			std::shared_ptr<AstParenthesis> newAst = std::make_shared<AstParenthesis>();
+			std::shared_ptr<AstExpr> newAst;
+			if( expectBool ) newAst = std::make_shared<AstBooleanParenthesis>();
+			else newAst = std::make_shared<AstParenthesis>();
 			newAst->token = token;
 
-			/*if( lastToken->type == TT::identifier )
-			{
-				generateNotification( NT::err_unexpectedReturningBeforeParenthesisBlock, currToken );
-				ignoreExpr();
-			}*/
-			//todo check for parBlock & also in indetifier
 			if( lValue != nullptr )
 			{//Check if has lValue
 				generateNotification( NT::err_unexpectedReturningBeforeParenthesisBlock, currToken );
@@ -460,28 +496,45 @@ namespace nigel
 					expectValue = false;
 					return nullptr;
 				}
-				if( !nextAst->isTypeReturnable() )
-				{//Content is not a returnable
-					generateNotification( NT::err_expectedExprWithReturnValue_atParenthesis, currToken );
-					ignoreExpr();
-					return newAst;
-				}
 
-				if( newAst->content != nullptr &&
-					newAst->content->type == AstExpr::Type::term && nextAst->type == AstExpr::Type::term &&
-					newAst->content->as<AstTerm>()->rVal != nextAst && nextAst->as<AstTerm>()->lVal != newAst->content )
-				{//Error with two following but seperate operations
-					generateNotification( NT::err_expectedTermAfterReturnableInParenthesis, nextAst->token );
-				}
-				else if( newAst->content == nullptr ||
-					newAst->content->type != AstExpr::Type::term || nextAst != newAst->content->as<AstTerm>()->rVal )
-				{
-					newAst->content = nextAst->as<AstReturning>();
-				}
+				if( expectBool )
+				{//Boolean expression
+					std::shared_ptr<AstBooleanParenthesis> newAstExpr = newAst->as<AstBooleanParenthesis>();
 
-				newAst->retType = newAst->content->retType;
+					if( !nextAst->isTypeCondition() )
+					{//Content is not a returnable
+						generateNotification( NT::err_expectedExprWithBooleanValue_atParenthesis, currToken );
+						ignoreExpr();
+						return newAst;
+					}
+					
+					newAstExpr->content = nextAst->as<AstCondition>();
+				}
+				else
+				{//Non boolean expression
+					std::shared_ptr<AstParenthesis> newAstExpr = newAst->as<AstParenthesis>();
 
-				//expectValue = false;
+					if( !nextAst->isTypeReturnable() )
+					{//Content is not a returnable
+						generateNotification( NT::err_expectedExprWithReturnValue_atParenthesis, currToken );
+						ignoreExpr();
+						return newAst;
+					}
+
+					if( newAstExpr->content != nullptr &&
+						newAstExpr->content->type == AstExpr::Type::term && nextAst->type == AstExpr::Type::term &&
+						newAstExpr->content->as<AstTerm>()->rVal != nextAst && nextAst->as<AstTerm>()->lVal != newAstExpr->content )
+					{//Error with two following but seperate operations
+						generateNotification( NT::err_expectedTermAfterReturnableInParenthesis, nextAst->token );
+					}
+					else if( newAstExpr->content == nullptr ||
+							 newAstExpr->content->type != AstExpr::Type::term || nextAst != newAstExpr->content->as<AstTerm>()->rVal )
+					{
+						newAstExpr->content = nextAst->as<AstReturning>();
+					}
+
+					newAstExpr->retType = newAstExpr->content->retType;
+				}
 
 				nextAst = resolveNextExpr();
 			}
@@ -496,7 +549,7 @@ namespace nigel
 			return nullptr;
 		}
 		else if( token->type == TT::tok_brace_open )
-		{
+		{//Open a new block
 			size_t myOpenBraceNr = ++openBraceCount;
 			std::shared_ptr<AstBlock> newAst = std::make_shared<AstBlock>();
 
@@ -526,11 +579,57 @@ namespace nigel
 			return newAst;
 		}
 		else if( token->type == TT::tok_brace_close )
-		{
+		{//Close a open block
 			if( openBraceCount <= 0 ) generateNotification( NT::err_unexpectedCloseOfBlock, token );
 			else openBraceCount--;
 
 			return nullptr;
+		}
+		else if( token->type == TT::cf_if )
+		{//Open a new if condition expression
+			std::shared_ptr<AstIf> newAst = std::make_shared<AstIf>();
+
+			//Condition
+			expectBool = true;
+			std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+			if( nextAst->type != AstExpr::Type::booleanParanthesis )
+			{
+				generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+				return nullptr;
+			}
+			newAst->condition = nextAst->as<AstBooleanParenthesis>();
+			expectBool = false;
+			lValue = nullptr;
+
+			//If case block
+			nextAst = resolveNextExpr();
+			if( nextAst->type != AstExpr::Type::block )
+			{
+				generateNotification( NT::err_expectBlockAfterIf, currToken );
+				return nullptr;
+			}
+			newAst->ifCase = nextAst->as<AstBlock>();
+
+			//Else case block
+			nextAst = resolveNextExpr();
+			if( nextAst != nullptr && nextAst->type == AstExpr::Type::elseStat )
+			{
+				nextAst = resolveNextExpr();
+				if( nextAst->type != AstExpr::Type::block )
+				{
+					generateNotification( NT::err_expectBlockAfterElse, currToken );
+					return nullptr;
+				}
+				newAst->elseCase = nextAst->as<AstBlock>();
+			}
+
+			blockStack.top()->content.push_back( newAst );//Add to ast
+
+			return newAst;
+		}
+		else if( token->type == TT::cf_else )
+		{//Else block. Just return a virtual ast.
+			return std::make_shared<AstExpr>( AstExpr::Type::elseStat );
 		}
 		else if( token->type == TT::tok_semicolon )
 		{//End of expression

@@ -20,6 +20,7 @@ namespace nigel
 		std::stack<std::shared_ptr<AstBlock>> blockStack;//Stack of blocks
 		std::shared_ptr<AstExpr> lValue;//Current lValue
 		bool expectValue = false;//If a variable is expected. E. g. after operator
+		bool expectBool = false;//If a boolean paranthesis is expected.
 		size_t openParenthesisCount = 0;
 		size_t openBraceCount = 0;
 

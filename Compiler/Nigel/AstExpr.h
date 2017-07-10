@@ -18,10 +18,16 @@ namespace nigel
 			allocation,
 			literal,
 			parenthesis,
+
+			booleanParanthesis,
+			ifStat,
+			elseStat,
+			whileStat,
+			keywordCondition,
+			arithmenticCondition,
+
 			functionCall,
 			returnStat,
-			ifStat,
-			whileStat,
 
 			count
 		} type;
@@ -29,6 +35,7 @@ namespace nigel
 		std::shared_ptr<Token> token;//Main ast-token
 
 		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
+		bool isTypeCondition() { return type == Type::keywordCondition || type == Type::arithmenticCondition; }
 
 		AstExpr( Type type ) : AstExpr::type(type) { }
 		virtual ~AstExpr() {}
@@ -163,6 +170,7 @@ namespace nigel
 		AstLiteral() : AstReturning( AstExpr::Type::literal ) {}
 	};
 
+		//A arithmetic block in parentheses
 	class AstParenthesis : public AstReturning
 	{
 	public:
@@ -172,6 +180,50 @@ namespace nigel
 	};
 
 
+		//A base class for boolean expressions which can be resolved to true or false.
+	class AstCondition : public AstExpr
+	{
+	public:
+		AstCondition( AstExpr::Type type ) : AstExpr( type ) {}
+	};
+
+		//A boolean block in parentheses
+	class AstBooleanParenthesis : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstCondition> content = nullptr;
+
+		AstBooleanParenthesis() : AstCondition( AstExpr::Type::booleanParanthesis ) {}
+	};
+
+		//A construct to constrol the flow of the program
+	class AstIf : public AstExpr
+	{
+	public:
+		std::shared_ptr<AstBooleanParenthesis> condition;
+		std::shared_ptr<AstBlock> ifCase;
+		std::shared_ptr<AstBlock> elseCase;
+
+		AstIf() : AstExpr( AstExpr::Type::ifStat ) {}
+	};
+
+		//true/false-keyword
+	class AstKeywordCondition : public AstCondition
+	{
+	public:
+		bool val = true;
+
+		AstKeywordCondition() : AstCondition( AstExpr::Type::keywordCondition ) {}
+	};
+
+		//Condition resolved from a returning value.
+	class AstArithmeticCondition : public AstCondition
+	{//todo
+	public:
+		std::shared_ptr<AstReturning> ret;
+
+		AstArithmeticCondition() : AstCondition( AstExpr::Type::arithmenticCondition ) {}
+	};
 }
 
 #endif // !NIGEL_AST_EXPR_H

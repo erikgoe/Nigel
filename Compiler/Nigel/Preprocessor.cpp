@@ -254,7 +254,7 @@ namespace nigel
 
 						//Replace defined constructs
 						for( auto &s : definitions )
-						{//todo: should not be replaced in literals!
+						{//todo: should not be replaced in string literals!
 							replace( str, s.first, s.second );
 						}
 

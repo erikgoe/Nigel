@@ -354,6 +354,16 @@ namespace nigel
 					tmp = std::make_shared<Token>( Token::Type::dy_delete );
 					token->swap( tmp );
 				}
+				else if( identifier == "true" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::literalTrue );
+					token->swap( tmp );
+				}
+				else if( identifier == "false" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::literalFalse );
+					token->swap( tmp );
+				}
 			}
 			else if( ( *token )->type == Token::Type::operatorToken )
 			{

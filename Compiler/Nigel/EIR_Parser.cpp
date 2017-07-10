@@ -164,7 +164,7 @@ namespace nigel
 			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
 			addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
 		}
-		else if( ast->type == AstExpr::Type::allocation )
+		else if( ast->type == AstExpr::Type::allocation )//todo del
 		{//Allocate a variable
 			std::shared_ptr<AstAllocation> a = ast->as<AstAllocation>();
 			std::shared_ptr<EIR_Command> newCmd = std::make_shared<EIR_Command>();
@@ -244,7 +244,7 @@ namespace nigel
 			{// =
 				generateSet( comb, lOp, rOp, a->lVal->token, false );
 			}
-			if( a->op == Token::Type::op_set_get )
+			else if( a->op == Token::Type::op_set_get )
 			{// = (The operation is itselve a returning, so it has to copy the value into the acc)
 				generateSet( comb, lOp, rOp, a->lVal->token, true );
 			}
@@ -392,10 +392,7 @@ namespace nigel
 			}
 
 
-			else
-			{
-				//todo error: unknown binary operator
-			}
+			else generateNotification( NT::err_unknownBinaryOperator, a->token );
 
 		}
 		else if( ast->type == AstExpr::Type::unary )
@@ -449,10 +446,7 @@ namespace nigel
 				{// ~
 					generateUnaryLOperation( ot, HexOp::cpl_a, op, a->token, false );
 				}
-				else
-				{
-					//todo error: unknown unary operator
-				}
+				else generateNotification( NT::err_unknownUnaryOperator, a->token );
 			}
 			else
 			{//R op

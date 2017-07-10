@@ -1,0 +1,12 @@
+byte a = 10;
+byte b = 12;
+
+byte c = 0;
+if( true )
+{
+	c = b;
+}
+else
+{
+	c = a;
+}

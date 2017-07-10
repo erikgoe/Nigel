@@ -17,6 +17,8 @@ namespace nigel
 		internalError,
 		unknownInternalError,
 
+		parameterError,
+
 		preprocessorFailed,
 		astParsingFailed,
 		eirParsingFailed,

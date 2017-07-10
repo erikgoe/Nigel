@@ -33,6 +33,8 @@ namespace nigel
 
 			literalN,
 			literalS,
+			literalTrue,
+			literalFalse,
 
 			operatorToken,//Any operator
 			op_add,// +

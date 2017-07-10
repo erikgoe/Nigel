@@ -107,6 +107,8 @@ namespace nigel
 		notificationTexts[NT::err_expectedIdentifierAfterOperator] = "Exptected Identifiern after operation.";
 		notificationTexts[NT::err_expectedExprWithReturnValue_atOperation] = "Expected expression or value as rValue at operation.";
 		notificationTexts[NT::err_unmatchingTypeFound_atTerm] = "Found unmatching type at Operation.";
+		notificationTexts[NT::err_unknownBinaryOperator] = "Unknown binary operator.";
+		notificationTexts[NT::err_unknownUnaryOperator] = "Unknown unary operator.";
 
 		notificationTexts[NT::err_cannotSetAConstantLiteral] = "Cannot set a constant literal or term. Did you mean '=='?";
 		notificationTexts[NT::err_onlyConstantsAreAllowedForBitShifts] = "Only positive constants are allowed for binary shifts, due to processor limitations.";
@@ -124,6 +126,10 @@ namespace nigel
 
 		notificationTexts[NT::err_unexpectedCloseOfBlock] = "Unexpected closing of block.";
 		notificationTexts[NT::err_aBlockWasNotClosed] = "A block was not closed.";
+
+		notificationTexts[NT::err_expectParanthesisAfterIfKeyword] = "Expect paranthesis after if keyword.";
+		notificationTexts[NT::err_expectBlockAfterIf] = "Expect block after if statement.";
+		notificationTexts[NT::err_expectBlockAfterElse] = "Expect block after else statement.";
 
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";
@@ -144,6 +150,11 @@ namespace nigel
 
 		if( parameters.find( "c" ) != parameters.end() ) codeBase.srcFile = std::make_shared<fs::path>( parameters["c"].front() );
 		if( parameters.find( "o" ) != parameters.end() ) codeBase.destFile = std::make_shared<fs::path>( parameters["o"].front() );
+		if( *codeBase.srcFile == *codeBase.destFile && parameters.find( "overwritecode" ) == parameters.end() )
+		{
+			log( "Warning: you attempt to overwrite your source code! Take --overwritecode as parameter to proceed.", LogLevel::Warning );
+			return ExecutionResult::parameterError;
+		}
 
 		if( parameters.find( "pl" ) != parameters.end() ) codeBase.printLexer = true;
 		if( parameters.find( "pa" ) != parameters.end() ) codeBase.printAST = true;
