@@ -39,6 +39,10 @@ namespace nigel
 			err_undefinedIdentifier,
 			err_noAllocationAfterVariableAttribute,
 
+			err_unexpectedReturningBeforeByteKeyword,
+			err_unexpectedReturningBeforeFastKeyword,
+			err_unexpectedReturningBeforeNormKeyword,
+			err_unexpectedReturningBeforeUnsignedKeyword,
 			err_unexpectedReturningBeforeIdentifier,
 			err_unexpectedReturningBeforeLiteral,
 			err_unexpectedReturningBeforeParenthesisBlock,
@@ -76,6 +80,8 @@ namespace nigel
 
 			err_expectParenthesisAfterWhileKeyword,
 			err_expectBlockAfterWhile,
+			err_comparisonConditionCannotBeThisRValue,
+			err_unexpectedIdentifierBeforeNotOperator,
 
 			err_unknownASTExpr,
 

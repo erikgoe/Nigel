@@ -24,7 +24,7 @@ Nigel is a new programming language for the 8051 microcontroller, with a c-like 
 * Optimizing code?
 
 ## How does it work?
-The Compiler is splitted in these parts:
+The Compiler is divided into these parts:
 ```
      Source code
           |
@@ -68,18 +68,9 @@ The Compiler is splitted in these parts:
           v
        HEX code
 ```
-The resulting Hex code can be burned onto a 8051 microcontroller or be interpreted in a simulator.
-
-## Current state
-- [x] Compiler structure
-- [x] Preprocessor
-- [x] Lexer
-- [x] AST Parser
-- [x] EIR Parser
-- [x] Linker
+The resulting Hex code can be uploaded onto a 8051 microcontroller or be interpreted in a simulator.
 
 ### Next development steps
-* Boolean expressions
 * Controll flow
 * 16+ types
 * ptr

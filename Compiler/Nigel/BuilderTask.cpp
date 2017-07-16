@@ -99,6 +99,10 @@ namespace nigel
 		notificationTexts[NT::err_undefinedIdentifier] = "The identifiern is not defined.";
 		notificationTexts[NT::err_noAllocationAfterVariableAttribute] = "Expected allocation after attribute keyword.";
 
+		notificationTexts[NT::err_unexpectedReturningBeforeByteKeyword] = "Unexpected returnable before byte keyword.";
+		notificationTexts[NT::err_unexpectedReturningBeforeFastKeyword] = "Unexpected returnable before fast keyword.";
+		notificationTexts[NT::err_unexpectedReturningBeforeNormKeyword] = "Unexpected returnable before norm keyword.";
+		notificationTexts[NT::err_unexpectedReturningBeforeUnsignedKeyword] = "Unexpected returnable before unsigned keyword.";
 		notificationTexts[NT::err_unexpectedReturningBeforeIdentifier] = "Unexpected returnable before identifier.";
 		notificationTexts[NT::err_unexpectedReturningBeforeLiteral] = "Unexpected returnable before literal.";
 		notificationTexts[NT::err_unexpectedReturningBeforeParenthesisBlock] = "Unexpected retunrable before parenthesis block.";
@@ -135,6 +139,8 @@ namespace nigel
 
 		notificationTexts[NT::err_expectParenthesisAfterWhileKeyword] = "Expect parenthesis after while statement.";
 		notificationTexts[NT::err_expectBlockAfterWhile] = "Expect block after while statement.";
+		notificationTexts[NT::err_comparisonConditionCannotBeThisRValue] = "A comparison condition cannot be the rValue of this expressions.";
+		notificationTexts[NT::err_unexpectedIdentifierBeforeNotOperator] = "Unexpected identifier before 'not' operator.";
 
 		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
 

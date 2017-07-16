@@ -135,7 +135,8 @@ namespace nigel
 		{//Combination of two conditional expressions
 			out = tabs + "<COMBINE> op(" + ast->token->toString() + ")";
 			log( out );
-			printSubAST( ast->as<AstCombinationCondition>()->lVal, tabCount + 1 );
+			if( ast->as<AstCombinationCondition>()->lVal != nullptr )
+				printSubAST( ast->as<AstCombinationCondition>()->lVal, tabCount + 1 );
 			printSubAST( ast->as<AstCombinationCondition>()->rVal, tabCount + 1 );
 		}
 
@@ -240,6 +241,13 @@ namespace nigel
 			newAst->lVal->model = base->memModel;
 			if( blockStack.top() != base->globalAst ) newAst->lVal->model = MemModel::stack;
 
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeByteKeyword, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+
 			//Get name of variable
 			std::shared_ptr<Token> valName = next();
 			if( valName->type != TT::identifier )
@@ -273,6 +281,13 @@ namespace nigel
 		}
 		if( token->type == TT::fast_attr )
 		{//Pre-allocation block
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeFastKeyword, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+
 			auto nextExpr = resolveNextExpr();
 			if( nextExpr->type != AstExpr::Type::allocation )
 			{
@@ -285,6 +300,13 @@ namespace nigel
 		}
 		if( token->type == TT::norm_attr )
 		{//Pre-allocation block
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeNormKeyword, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+
 			auto nextExpr = resolveNextExpr();
 			if( nextExpr->type != AstExpr::Type::allocation )
 			{
@@ -297,6 +319,13 @@ namespace nigel
 		}
 		if( token->type == TT::unsigned_attr )
 		{//Pre-allocation block
+			if( lValue != nullptr )
+			{//Check if has lValue
+				generateNotification( NT::err_unexpectedReturningBeforeUnsignedKeyword, currToken );
+				ignoreExpr();
+				return nullptr;
+			}
+
 			auto nextExpr = resolveNextExpr();
 			if( nextExpr->type != AstExpr::Type::allocation )
 			{
@@ -496,8 +525,8 @@ namespace nigel
 				else lValue = newAst;
 				return newAst;
 			}
-			else if( token->type == TT::op_and_log || token->type == TT::op_or_log || token->type == TT::op_not )
-			{//Conditional expression todo not-operator
+			else if( token->type == TT::op_and_log || token->type == TT::op_or_log )
+			{//Conditional expression
 				std::shared_ptr<AstCombinationCondition> newAst = std::make_shared<AstCombinationCondition>();
 				newAst->token = token;
 
@@ -544,6 +573,53 @@ namespace nigel
 
 				if( prevLValue != newAst->lVal ) lValue = prevLValue;
 				else lValue = newAst;
+				return newAst;
+			}
+			else if( token->type == TT::op_not )
+			{//not-operator
+				std::shared_ptr<AstCombinationCondition> newAst = std::make_shared<AstCombinationCondition>();
+				newAst->token = token;
+
+				if( lValue != nullptr )
+				{//Check if has lValue
+					generateNotification( NT::err_unexpectedIdentifierBeforeNotOperator, currToken );
+					ignoreExpr();
+					return nullptr;
+				}
+				newAst->op = token->type;
+
+				auto prevLValue = lValue;
+
+				//Check rValue
+				expectValue = true;
+				lValue = nullptr;
+				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+				if( nextAst == nullptr )
+				{//no rValue
+					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+					expectValue = false;
+					return nullptr;
+				}
+				if( !nextAst->isTypeCondition() )
+				{//rValue is not a conditional
+					if( nextAst->isTypeReturnable() )
+					{
+						auto condition = std::make_shared<AstArithmeticCondition>();
+						condition->ret = nextAst->as<AstReturning>();
+						newAst->rVal = condition;
+					}
+					else
+					{
+						generateNotification( NT::err_expectedExprWithConditionalValue_atOperation, currToken );
+						ignoreExpr();
+						return newAst;
+					}
+				}
+				else newAst->rVal = nextAst->as<AstCondition>();
+
+				expectValue = false;
+
+				lValue = newAst;
 				return newAst;
 			}
 			else
@@ -742,7 +818,7 @@ namespace nigel
 			blockHasHead = true;
 			nextAst = resolveNextExpr();
 			if( nextAst->type != AstExpr::Type::block )
-			{//todo enable single expressions without block
+			{
 				generateNotification( NT::err_expectBlockAfterIf, currToken );
 				return nullptr;
 			}
@@ -755,7 +831,7 @@ namespace nigel
 			{
 				nextAst = resolveNextExpr();
 				if( nextAst->type != AstExpr::Type::block )
-				{//todo enable single expressions without block
+				{
 					generateNotification( NT::err_expectBlockAfterElse, currToken );
 					return nullptr;
 				}
@@ -787,7 +863,7 @@ namespace nigel
 			blockHasHead = true;
 			nextAst = resolveNextExpr();
 			if( nextAst->type != AstExpr::Type::block )
-			{//todo enable single expressions without block
+			{
 				generateNotification( NT::err_expectBlockAfterWhile, currToken );
 				return nullptr;
 			}
@@ -930,8 +1006,7 @@ namespace nigel
 		if( clTerm != nullptr )
 		{//Min. 1 term was splitted up
 			if( clTerm->type == AstExpr::Type::combinationCondition ) clTerm->as<AstCombinationCondition>()->rVal = cExpr;
-			else if( clTerm->type == AstExpr::Type::comparisonCondition );//todo print error because this is not possible: clTerm->as<AstComparisonCondition>()->rVal = cExpr;
-			else if( clTerm->type == AstExpr::Type::term );//todo print error because this is not possible: clTerm->as<AstTerm>()->rVal = cExpr;
+			else generateNotification( NT::err_comparisonConditionCannotBeThisRValue, clTerm->token );
 			return currLVal->as<AstReturning>();
 		}
 		else

@@ -216,27 +216,6 @@ namespace nigel
 			}
 
 		}
-		else if( ast->type == AstExpr::Type::allocation )//todo del
-		{//Allocate a variable
-			std::shared_ptr<AstAllocation> a = ast->as<AstAllocation>();
-			std::shared_ptr<EIR_Command> newCmd = std::make_shared<EIR_Command>();
-
-			/*if( a->rVal->type == AstExpr::Type::literal )
-			{//Use the literal
-				newCmd->operation = HexOp::mov_adr_const;
-				newCmd->op1 = varList[a->lVal->name];
-				newCmd->op2 = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
-				base->eirCommands.push_back( newCmd );
-			}
-			else
-			{
-				//parseAst( a->rVal );//Result to acc
-			}*/
-		}
-		else if( ast->type == AstExpr::Type::variable )
-		{//Single variable
-			//do nothing
-		}
 		else if( ast->type == AstExpr::Type::term )
 		{//Do some operation
 			std::shared_ptr<AstTerm> a = ast->as<AstTerm>();
@@ -595,7 +574,9 @@ namespace nigel
 				base->eirCommands.push_back( conditionPos );
 			}
 		}
-		else generateNotification( NT::err_unknownASTExpr, ast->token );
+		else if( ast->type != AstExpr::Type::allocation &&
+				 ast->type == AstExpr::Type::variable &&
+				 ast->type == AstExpr::Type::literal ) generateNotification( NT::err_unknownASTExpr, ast->token );
 	}
 
 	void EIR_Parser::parseCondition( std::shared_ptr<AstExpr> ast, std::map<String, std::shared_ptr<EIR_Variable>> varList )
@@ -769,7 +750,7 @@ namespace nigel
 			}
 			else if( a->op == Token::Type::op_not )
 			{// !
-				parseCondition( a->lVal, varList );
+				parseCondition( a->rVal, varList );
 				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 2 ) );
 			}
 		}
