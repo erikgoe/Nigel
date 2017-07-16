@@ -554,24 +554,42 @@ namespace nigel
 				generateNotification( NT::err_expectParenthesisAfterWhileKeyword, a->condition->token );
 			else
 			{
-				u32 idB = EIR_Condition::getNextConditionPos();
-				u32 idE = EIR_Condition::getNextConditionPos();
+				if( a->isDoWhile )
+				{//Is do-while
+					u32 idB = EIR_Condition::getNextConditionPos();
 
-				auto conditionPos = std::make_shared<EIR_Command>();
-				conditionPos->type = EIR_Command::Type::conditionEnd;
-				conditionPos->id = idB;
-				base->eirCommands.push_back( conditionPos );
+					auto conditionPos = std::make_shared<EIR_Command>();
+					conditionPos->type = EIR_Command::Type::conditionEnd;
+					conditionPos->id = idB;
+					base->eirCommands.push_back( conditionPos );
 
-				parseCondition( a->condition, varList );
-				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//true
-				addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idE, true ) );//false
-				parseAst( a->block, varList );
-				addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idB, true ) );
+					parseAst( a->block, varList );
+					parseCondition( a->condition, varList );
+					addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 2 ) );//true
+					addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//false
+					addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idB, true ) );
+				}
+				else
+				{//Is normal while statement
+					u32 idB = EIR_Condition::getNextConditionPos();
+					u32 idE = EIR_Condition::getNextConditionPos();
 
-				conditionPos = std::make_shared<EIR_Command>();
-				conditionPos->type = EIR_Command::Type::conditionEnd;
-				conditionPos->id = idE;
-				base->eirCommands.push_back( conditionPos );
+					auto conditionPos = std::make_shared<EIR_Command>();
+					conditionPos->type = EIR_Command::Type::conditionEnd;
+					conditionPos->id = idB;
+					base->eirCommands.push_back( conditionPos );
+
+					parseCondition( a->condition, varList );
+					addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//true
+					addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idE, true ) );//false
+					parseAst( a->block, varList );
+					addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idB, true ) );
+
+					conditionPos = std::make_shared<EIR_Command>();
+					conditionPos->type = EIR_Command::Type::conditionEnd;
+					conditionPos->id = idE;
+					base->eirCommands.push_back( conditionPos );
+				}
 			}
 		}
 		else if( ast->type != AstExpr::Type::allocation &&

@@ -222,6 +222,7 @@ namespace nigel
 	public:
 		std::shared_ptr<AstBooleanParenthesis> condition;
 		std::shared_ptr<AstBlock> block;
+		bool isDoWhile = false;
 
 		AstWhile() : AstExpr( AstExpr::Type::whileStat ) {}
 	};

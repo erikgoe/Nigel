@@ -107,10 +107,20 @@ namespace nigel
 		}
 		else if( ast->type == AstExpr::Type::whileStat )
 		{//Print while statement
-			out = tabs + "<WHILE>";
-			log( out );
-			printSubAST( ast->as<AstWhile>()->condition, tabCount + 1 );
-			printSubAST( ast->as<AstWhile>()->block, tabCount + 1 );
+			if( ast->as<AstWhile>()->isDoWhile )
+			{
+				out = tabs + "<DO_WHILE>";
+				log( out );
+				printSubAST( ast->as<AstWhile>()->block, tabCount + 1 );
+				printSubAST( ast->as<AstWhile>()->condition, tabCount + 1 );
+			}
+			else
+			{
+				out = tabs + "<WHILE>";
+				log( out );
+				printSubAST( ast->as<AstWhile>()->condition, tabCount + 1 );
+				printSubAST( ast->as<AstWhile>()->block, tabCount + 1 );
+			}
 		}
 		else if( ast->type == AstExpr::Type::keywordCondition )
 		{//Print keyword (true/false)
@@ -846,31 +856,62 @@ namespace nigel
 		{//Create a new while loop
 			std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
 			newAst->token = token;
+			newAst->isDoWhile = previousDo;
+			previousDo = false;
 
-			//Condition
-			expectBool = true;
-			std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-			if( nextAst->type != AstExpr::Type::booleanParenthesis )
-			{
-				generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
-				return nullptr;
+			if( newAst->isDoWhile )
+			{//Is do-while
+				//Block
+				std::shared_ptr<AstBlock> block = blockStack.top()->content.back()->as<AstBlock>();
+				blockStack.top()->content.pop_back();
+				newAst->block = block;
+
+				//Condition
+				expectBool = true;
+				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+				if( nextAst->type != AstExpr::Type::booleanParenthesis )
+				{
+					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+					return nullptr;
+				}
+				newAst->condition = nextAst->as<AstBooleanParenthesis>();
+				expectBool = false;
+				lValue = newAst;//To force semicolon.
 			}
-			newAst->condition = nextAst->as<AstBooleanParenthesis>();
-			expectBool = false;
-			lValue = nullptr;
+			else
+			{//Is normal while
+				//Condition
+				expectBool = true;
+				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+				if( nextAst->type != AstExpr::Type::booleanParenthesis )
+				{
+					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+					return nullptr;
+				}
+				newAst->condition = nextAst->as<AstBooleanParenthesis>();
+				expectBool = false;
+				lValue = nullptr;
 
-			//Block
-			blockHasHead = true;
-			nextAst = resolveNextExpr();
-			if( nextAst->type != AstExpr::Type::block )
-			{
-				generateNotification( NT::err_expectBlockAfterWhile, currToken );
-				return nullptr;
+				//Block
+				blockHasHead = true;
+				nextAst = resolveNextExpr();
+				if( nextAst->type != AstExpr::Type::block )
+				{
+					generateNotification( NT::err_expectBlockAfterWhile, currToken );
+					return nullptr;
+				}
+				newAst->block = nextAst->as<AstBlock>();
+				blockStack.top()->content.push_back( newAst );//Add to ast
 			}
-			newAst->block = nextAst->as<AstBlock>();
 
-			blockStack.top()->content.push_back( newAst );//Add to ast
 
+			return newAst;
+		}
+		else if( token->type == TT::cf_do )
+		{//Create a new do while loop
+			std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
+			newAst->token = token;
+			previousDo = true;
 			return newAst;
 		}
 		else if( token->type == TT::cf_else )

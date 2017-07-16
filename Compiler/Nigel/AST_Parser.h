@@ -22,6 +22,7 @@ namespace nigel
 		bool expectValue = false;//If a variable is expected. E. g. after operator
 		bool expectBool = false;//If a boolean paranthesis is expected.
 		bool blockHasHead = false;//If the following block has a head. E. g. a if block.
+		bool previousDo = false;//If the previous was the do keyword.
 		size_t openParenthesisCount = 0;
 		size_t openBraceCount = 0;
 
