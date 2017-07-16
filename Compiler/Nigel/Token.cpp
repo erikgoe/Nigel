@@ -18,7 +18,8 @@ namespace nigel
 		else if( type == Token::Type::cf_while ) return "while";
 		else if( type == Token::Type::cf_for ) return "for";
 		else if( type == Token::Type::cf_do ) return "do";
-		else if( type == Token::Type::return_fn ) return "return";
+		else if( type == Token::Type::cf_return ) return "return";
+		else if( type == Token::Type::cf_break ) return "break";
 		else if( type == Token::Type::dy_new ) return "new";
 		else if( type == Token::Type::dy_delete ) return "delete";
 		else if( type == Token::Type::literalTrue ) return "true";

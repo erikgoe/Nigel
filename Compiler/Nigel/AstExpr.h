@@ -28,6 +28,8 @@ namespace nigel
 			comparisonCondition,
 			combinationCondition,
 
+			breakStat,
+
 			functionCall,
 			returnStat,
 
@@ -267,6 +269,7 @@ namespace nigel
 
 		AstCombinationCondition() : AstCondition( AstExpr::Type::combinationCondition ) {}
 	};
+
 }
 
 #endif // !NIGEL_AST_EXPR_H

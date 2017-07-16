@@ -149,6 +149,11 @@ namespace nigel
 				printSubAST( ast->as<AstCombinationCondition>()->lVal, tabCount + 1 );
 			printSubAST( ast->as<AstCombinationCondition>()->rVal, tabCount + 1 );
 		}
+		else if( ast->type == AstExpr::Type::breakStat )
+		{//Break statement
+			out = tabs + "<BREAK>";
+			log( out );
+		}
 
 
 		if( ast->type == AstExpr::Type::block )
@@ -852,6 +857,12 @@ namespace nigel
 
 			return newAst;
 		}
+		else if( token->type == TT::cf_else )
+		{//Else block. Just return a virtual ast.
+			auto newAst = std::make_shared<AstExpr>( AstExpr::Type::elseStat );
+			newAst->token = token;
+			return newAst;
+		}
 		else if( token->type == TT::cf_while )
 		{//Create a new while loop
 			std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
@@ -914,10 +925,11 @@ namespace nigel
 			previousDo = true;
 			return newAst;
 		}
-		else if( token->type == TT::cf_else )
+		else if( token->type == TT::cf_break )
 		{//Else block. Just return a virtual ast.
-			auto newAst = std::make_shared<AstExpr>( AstExpr::Type::elseStat );
+			auto newAst = std::make_shared<AstExpr>( AstExpr::Type::breakStat );
 			newAst->token = token;
+			blockStack.top()->content.push_back( newAst );//Add to ast
 			return newAst;
 		}
 		else if( token->type == TT::tok_semicolon )

@@ -84,6 +84,7 @@ namespace nigel
 			err_unexpectedIdentifierBeforeNotOperator,
 
 			err_unknownASTExpr,
+			err_cannotBreakAtThisPosition,
 
 			err_blockNotFound,
 

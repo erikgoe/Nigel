@@ -71,7 +71,6 @@ The Compiler is divided into these parts:
 The resulting Hex code can be uploaded onto a 8051 microcontroller or be interpreted in a simulator.
 
 ### Next development steps
-* Controll flow
 * 16+ types
 * ptr
 * 'Magic addresses' of the microcontroller (ports, etc.)

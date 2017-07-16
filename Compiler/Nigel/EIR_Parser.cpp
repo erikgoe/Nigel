@@ -188,6 +188,8 @@ namespace nigel
 				blockBegin->type = EIR_Command::Type::blockBegin;
 				blockBegin->id = a->id;
 				base->eirCommands.push_back( blockBegin );
+
+				breakableIDs.push( a->id );
 			}
 
 			//Increment SP
@@ -213,6 +215,8 @@ namespace nigel
 				blockEnd->type = EIR_Command::Type::blockEnd;
 				blockEnd->id = a->id;
 				base->eirCommands.push_back( blockEnd );
+
+				breakableIDs.pop();
 			}
 
 		}
@@ -591,6 +595,14 @@ namespace nigel
 					base->eirCommands.push_back( conditionPos );
 				}
 			}
+		}
+		else if( ast->type == AstExpr::Type::breakStat )
+		{//Break statement
+			if( !breakableIDs.empty() )
+			{
+				addCmd( HexOp::jmp_abs, EIR_Block::getBlockEnd( breakableIDs.top() ) );
+			}
+			else generateNotification( NT::err_cannotBreakAtThisPosition, ast->token );
 		}
 		else if( ast->type != AstExpr::Type::allocation &&
 				 ast->type == AstExpr::Type::variable &&

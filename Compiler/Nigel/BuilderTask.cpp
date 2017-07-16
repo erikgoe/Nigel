@@ -143,6 +143,9 @@ namespace nigel
 		notificationTexts[NT::err_unexpectedIdentifierBeforeNotOperator] = "Unexpected identifier before 'not' operator.";
 
 		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
+		notificationTexts[NT::err_cannotBreakAtThisPosition] = "Can't break out of this or outer scope.";
+
+		notificationTexts[NT::err_blockNotFound] = "Block was not found.";
 
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";

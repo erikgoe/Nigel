@@ -37,6 +37,8 @@ namespace nigel
 
 	private:
 		CodeBase *base;
+		std::stack<u32> breakableIDs;//Stack of breakable blocks.
+		std::stack<u32> funcIDs;//Stack of function bocks.
 
 		//Converts a binary operation to an unary operation.
 		OperationType binaryToUnaryOperationType( OperationCombination comb );

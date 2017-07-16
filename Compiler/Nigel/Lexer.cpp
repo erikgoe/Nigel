@@ -339,9 +339,14 @@ namespace nigel
 					tmp = std::make_shared<Token>( Token::Type::cf_do );
 					token->swap( tmp );
 				}
+				else if( identifier == "break" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::cf_break );
+					token->swap( tmp );
+				}
 				else if( identifier == "return" )
 				{
-					tmp = std::make_shared<Token>( Token::Type::return_fn );
+					tmp = std::make_shared<Token>( Token::Type::cf_return );
 					token->swap( tmp );
 				}
 				else if( identifier == "new" )

@@ -27,7 +27,8 @@ namespace nigel
 			cf_while,
 			cf_for,
 			cf_do,
-			return_fn,
+			cf_break,
+			cf_return,
 			dy_new,
 			dy_delete,
 
