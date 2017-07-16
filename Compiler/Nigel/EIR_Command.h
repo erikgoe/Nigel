@@ -75,6 +75,17 @@ namespace nigel
 
 		cpl_a = 0xF4,
 
+		jmp_abs = 0x02,
+		jmp_rel = 0x80,
+		jmp_c_rel = 0x40,
+		jmp_nc_rel = 0x50,
+		jmp_z_rel = 0x60,
+		jmp_nz_rel = 0x70,
+
+		call_abs = 0x12,
+		ret = 0x22,
+		reti = 0x32,
+
 		count
 	};
 
@@ -88,6 +99,8 @@ namespace nigel
 			constant,//Constant
 			variable,//Variable
 			sfr,//Special function register
+			block,//Block id
+			condition,//Condition jmp
 
 			count
 		} type;
@@ -173,16 +186,76 @@ namespace nigel
 		}
 	};
 
+		//Address of a block
+	class EIR_Block : public EIR_Operator
+	{
+	public:
+		u32 blockID = 0;
+		bool begin = true;//Otherwise to the end.
+
+		static std::shared_ptr<EIR_Block> getBlockBegin( u32 id )
+		{
+			return std::make_shared<EIR_Block>( id, true );
+		}
+
+		static std::shared_ptr<EIR_Block> getBlockEnd( u32 id )
+		{
+			return std::make_shared<EIR_Block>( id, false );
+		}
+		EIR_Block( u32 blockID, bool begin ) : EIR_Operator( EIR_Operator::Type::block )
+		{
+			this->blockID = blockID;
+			this->begin = begin;
+		}
+	};
+
+		//Address of a block
+	class EIR_Condition : public EIR_Operator
+	{
+		static u32 nextConditionPos;//Enables jmp in conditions.
+
+	public:
+		u32 conditionID = 0;
+		bool isTrue = true;//Jmp to true or 2 more to false
+
+		static std::shared_ptr<EIR_Condition> getNew( u32 id, bool isTrue )
+		{
+			return std::make_shared<EIR_Condition>( id, isTrue );
+		}
+
+		EIR_Condition( u32 blockID, bool isTrue ) : EIR_Operator( EIR_Operator::Type::condition )
+		{
+			this->conditionID = blockID;
+			this->isTrue = isTrue;
+		}
+
+		static u32 getNextConditionPos()
+		{
+			return nextConditionPos++;
+		}
+	};
+
 
 		//Single command
 	class EIR_Command
 	{
 	public:
+		enum class Type
+		{
+			operation,
+			blockBegin,
+			blockEnd,
+			conditionEnd,
+		} type = Type::operation;
+
 		HexOp operation;//Id of the operation
 		std::shared_ptr<EIR_Operator> op1 = nullptr;//First operator
 		std::shared_ptr<EIR_Operator> op2 = nullptr;//Second operator
 
+		u32 id = 0;//Is used in case of blockBegin || blockEnd.
+
 		EIR_Command() {}
+
 	};
 }
 

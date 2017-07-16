@@ -67,9 +67,20 @@ namespace nigel
 			err_unexpectedCloseOfBlock,
 			err_aBlockWasNotClosed,
 
-			err_expectParanthesisAfterIfKeyword,
+			err_expectParenthesisAfterIfKeyword,
+			err_expectConditionInParanthesis,
 			err_expectBlockAfterIf,
 			err_expectBlockAfterElse,
+
+			err_expectedExprWithConditionalValue_atOperation,
+
+			err_expectParenthesisAfterWhileKeyword,
+			err_expectBlockAfterWhile,
+
+			err_unknownASTExpr,
+
+			err_blockNotFound,
+
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
 
@@ -84,6 +95,7 @@ namespace nigel
 
 			imp_operationOnTwoConstantsCanBePrevented,
 			imp_operationOnConstantCanBePrevented,
+
 
 			count
 		} type;

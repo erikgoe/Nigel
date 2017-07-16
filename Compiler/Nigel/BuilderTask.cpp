@@ -127,9 +127,16 @@ namespace nigel
 		notificationTexts[NT::err_unexpectedCloseOfBlock] = "Unexpected closing of block.";
 		notificationTexts[NT::err_aBlockWasNotClosed] = "A block was not closed.";
 
-		notificationTexts[NT::err_expectParanthesisAfterIfKeyword] = "Expect paranthesis after if keyword.";
+		notificationTexts[NT::err_expectParenthesisAfterIfKeyword] = "Expect parenthesis after if keyword.";
 		notificationTexts[NT::err_expectBlockAfterIf] = "Expect block after if statement.";
 		notificationTexts[NT::err_expectBlockAfterElse] = "Expect block after else statement.";
+
+		notificationTexts[NT::err_expectedExprWithConditionalValue_atOperation] = "Expected boolean expression or value as rValue at operation.";
+
+		notificationTexts[NT::err_expectParenthesisAfterWhileKeyword] = "Expect parenthesis after while statement.";
+		notificationTexts[NT::err_expectBlockAfterWhile] = "Expect block after while statement.";
+
+		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
 
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";

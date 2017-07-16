@@ -19,12 +19,14 @@ namespace nigel
 			literal,
 			parenthesis,
 
-			booleanParanthesis,
+			booleanParenthesis,
 			ifStat,
 			elseStat,
 			whileStat,
 			keywordCondition,
 			arithmenticCondition,
+			comparisonCondition,
+			combinationCondition,
 
 			functionCall,
 			returnStat,
@@ -35,7 +37,7 @@ namespace nigel
 		std::shared_ptr<Token> token;//Main ast-token
 
 		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
-		bool isTypeCondition() { return type == Type::keywordCondition || type == Type::arithmenticCondition; }
+		bool isTypeCondition() { return type == Type::booleanParenthesis || type == Type::keywordCondition || type == Type::arithmenticCondition || type == Type::comparisonCondition || type == Type::combinationCondition; }
 
 		AstExpr( Type type ) : AstExpr::type(type) { }
 		virtual ~AstExpr() {}
@@ -55,13 +57,19 @@ namespace nigel
 		//Bock of linear executable expressions
 	class AstBlock : public AstExpr
 	{
+		static u32 nextID;//Enables creation of new variables.
+
 	public:
-		String name;//Block name
+		String name;//Block name todo check if needed
+		u32 id;//Unique id for this block.
 		std::list<std::shared_ptr<AstExpr>> content;
 		std::list<std::pair<VariableBinding, size_t>> variables;//All available variables. Bindings mapped to their relative scope offset.
 		std::list<VariableBinding> newVariables;//Variables which are declated in this block
 
-		AstBlock() : AstExpr(AstExpr::Type::block) {}
+		AstBlock() : AstExpr( AstExpr::Type::block )
+		{
+			id = nextID++;
+		}
 	};
 
 		//Basic types of nigel
@@ -102,7 +110,7 @@ namespace nigel
 		}
 
 		AstReturning( AstExpr::Type type ) : AstExpr( type ) {}
-		~AstReturning() {}
+		virtual ~AstReturning() {}
 	};
 
 		//A variable
@@ -185,6 +193,7 @@ namespace nigel
 	{
 	public:
 		AstCondition( AstExpr::Type type ) : AstExpr( type ) {}
+		virtual ~AstCondition() {}
 	};
 
 		//A boolean block in parentheses
@@ -193,7 +202,7 @@ namespace nigel
 	public:
 		std::shared_ptr<AstCondition> content = nullptr;
 
-		AstBooleanParenthesis() : AstCondition( AstExpr::Type::booleanParanthesis ) {}
+		AstBooleanParenthesis() : AstCondition( AstExpr::Type::booleanParenthesis ) {}
 	};
 
 		//A construct to constrol the flow of the program
@@ -207,6 +216,17 @@ namespace nigel
 		AstIf() : AstExpr( AstExpr::Type::ifStat ) {}
 	};
 
+		//A construct to loop a chain of expressioms
+	class AstWhile : public AstExpr
+	{
+	public:
+		std::shared_ptr<AstBooleanParenthesis> condition;
+		std::shared_ptr<AstBlock> block;
+
+		AstWhile() : AstExpr( AstExpr::Type::whileStat ) {}
+	};
+
+
 		//true/false-keyword
 	class AstKeywordCondition : public AstCondition
 	{
@@ -216,13 +236,35 @@ namespace nigel
 		AstKeywordCondition() : AstCondition( AstExpr::Type::keywordCondition ) {}
 	};
 
-		//Condition resolved from a returning value.
+		//Condition resolved from a arithmetic expression.
 	class AstArithmeticCondition : public AstCondition
-	{//todo
+	{
 	public:
 		std::shared_ptr<AstReturning> ret;
 
 		AstArithmeticCondition() : AstCondition( AstExpr::Type::arithmenticCondition ) {}
+	};
+
+		//Boolean comparison
+	class AstComparisonCondition : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstReturning> lVal;
+		std::shared_ptr<AstReturning> rVal;
+		Token::Type op;
+
+		AstComparisonCondition() : AstCondition( AstExpr::Type::comparisonCondition ) {}
+	};
+
+		//Boolean combination
+	class AstCombinationCondition : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstCondition> lVal;
+		std::shared_ptr<AstCondition> rVal;
+		Token::Type op;
+
+		AstCombinationCondition() : AstCondition( AstExpr::Type::combinationCondition ) {}
 	};
 }
 

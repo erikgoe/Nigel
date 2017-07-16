@@ -86,11 +86,25 @@ The resulting Hex code can be burned onto a 8051 microcontroller or be interpret
 * 'Magic addresses' of the microcontroller (ports, etc.)
 * functions
 
-## Installation
+## Getting started
+### Building
 1. Install Visual Studio (tested with VC 2017).
 2. Download the repository.
 3. Install the boost library (http://www.boost.org/) and add it to the project dependencies.
 4. Compile and hope for the best.
+
+### Usage
+```cd <nigel path>\Compiler\Release```,
+
+then
+```nigel build --c ..\tests\code\parser1.nig --o ..\tests\code\parser1.hex```
+to compile a test program
+
+or 
+```nigel help```
+to get further information on how to use nigel in the command line.
+
+Alternatively you can add the binaries output directory to your PATH environment variable.
 
 ## Who uses Nigel?
 Hmm... maybe you?

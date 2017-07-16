@@ -6,6 +6,7 @@ namespace nigel
 	using OC = EIR_Parser::OperationCombination;
 	using OT = EIR_Parser::OperationType;
 	u32 EIR_Variable::nextID { 0 };
+	u32 EIR_Condition::nextConditionPos { 0 };
 
 	OT EIR_Parser::binaryToUnaryOperationType( OC comb )
 	{
@@ -43,46 +44,82 @@ namespace nigel
 		log( "#CODE" );
 		for( auto c : base.eirCommands )
 		{//Print all commands
-			String out = int_to_hex( static_cast< u8 >( c->operation ) );
+			String out;
+			if( c->type == EIR_Command::Type::operation )
+			{
+				out = int_to_hex( static_cast< u8 >( c->operation ) );
 
-			if( c->op1 != nullptr )
-			{//Has operator
-				out += ", ";
-				if( c->op1->type == EIR_Operator::Type::variable )
-				{
-					std::shared_ptr<EIR_Variable> var = c->op1->as<EIR_Variable>();
-					out += "V" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
-				}
-				else if( c->op1->type == EIR_Operator::Type::constant )
-				{
-					std::shared_ptr<EIR_Constant> var = c->op1->as<EIR_Constant>();
-					out += "C" + int_to_hex( var->data );
-				}
-				else if( c->op1->type == EIR_Operator::Type::sfr )
-				{
-					std::shared_ptr<EIR_SFR> var = c->op1->as<EIR_SFR>();
-					out += "S" + int_to_hex( var->address );
-				}
-
-				if( c->op2 != nullptr )
-				{//Has two operators
+				if( c->op1 != nullptr )
+				{//Has operator
 					out += ", ";
-					if( c->op2->type == EIR_Operator::Type::variable )
+					if( c->op1->type == EIR_Operator::Type::variable )
 					{
-						std::shared_ptr<EIR_Variable> var = c->op2->as<EIR_Variable>();
+						std::shared_ptr<EIR_Variable> var = c->op1->as<EIR_Variable>();
 						out += "V" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
 					}
-					else if( c->op2->type == EIR_Operator::Type::constant )
+					else if( c->op1->type == EIR_Operator::Type::constant )
 					{
-						std::shared_ptr<EIR_Constant> var = c->op2->as<EIR_Constant>();
+						std::shared_ptr<EIR_Constant> var = c->op1->as<EIR_Constant>();
 						out += "C" + int_to_hex( var->data );
 					}
-					else if( c->op2->type == EIR_Operator::Type::sfr )
+					else if( c->op1->type == EIR_Operator::Type::sfr )
 					{
-						std::shared_ptr<EIR_SFR> var = c->op2->as<EIR_SFR>();
+						std::shared_ptr<EIR_SFR> var = c->op1->as<EIR_SFR>();
 						out += "S" + int_to_hex( var->address );
 					}
+					else if( c->op1->type == EIR_Operator::Type::block )
+					{
+						std::shared_ptr<EIR_Block> var = c->op1->as<EIR_Block>();
+						out += "B" + int_to_hex( var->blockID ) + ( var->begin ? "B" : "E" );
+					}
+					else if( c->op1->type == EIR_Operator::Type::condition )
+					{
+						std::shared_ptr<EIR_Condition> var = c->op1->as<EIR_Condition>();
+						out += "D" + int_to_hex( var->conditionID );
+					}
+
+					if( c->op2 != nullptr )
+					{//Has two operators
+						out += ", ";
+						if( c->op2->type == EIR_Operator::Type::variable )
+						{
+							std::shared_ptr<EIR_Variable> var = c->op2->as<EIR_Variable>();
+							out += "V" + int_to_hex( var->id ) + "-" + int_to_hex( var->address ) + "-" + int_to_hex( var->size );
+						}
+						else if( c->op2->type == EIR_Operator::Type::constant )
+						{
+							std::shared_ptr<EIR_Constant> var = c->op2->as<EIR_Constant>();
+							out += "C" + int_to_hex( var->data );
+						}
+						else if( c->op2->type == EIR_Operator::Type::sfr )
+						{
+							std::shared_ptr<EIR_SFR> var = c->op2->as<EIR_SFR>();
+							out += "S" + int_to_hex( var->address );
+						}
+						else if( c->op2->type == EIR_Operator::Type::block )
+						{
+							std::shared_ptr<EIR_Block> var = c->op1->as<EIR_Block>();
+							out += "B" + int_to_hex( var->blockID ) + ( var->begin ? "B" : "E" );
+						}
+						else if( c->op2->type == EIR_Operator::Type::condition )
+						{
+							std::shared_ptr<EIR_Condition> var = c->op2->as<EIR_Condition>();
+							out += "D" + int_to_hex( var->conditionID );
+						}
+					}
 				}
+			}
+			else if( c->type == EIR_Command::Type::blockBegin )
+			{
+				out = " :blockB, " + int_to_hex( c->id );
+			}
+			else if( c->type == EIR_Command::Type::blockEnd )
+			{
+				out = " :blockE, " + int_to_hex( c->id );
+			}
+			else if( c->type == EIR_Command::Type::conditionEnd )
+			{
+				out = " :condition, " + int_to_hex( c->id );
 			}
 			log( out );
 		}
@@ -146,6 +183,13 @@ namespace nigel
 				stackInc += sizeOfType( v.second->retType ) / 8;
 			}
 
+			{//Add begin of block
+				auto blockBegin = std::make_shared<EIR_Command>();
+				blockBegin->type = EIR_Command::Type::blockBegin;
+				blockBegin->id = a->id;
+				base->eirCommands.push_back( blockBegin );
+			}
+
 			//Increment SP
 			addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
 			addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
@@ -163,6 +207,14 @@ namespace nigel
 			addCmd( HexOp::add_a_const, EIR_Constant::fromConstant( ~stackInc + 1 ) );
 			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
 			addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
+
+			{//Add end of block
+				auto blockEnd = std::make_shared<EIR_Command>();;
+				blockEnd->type = EIR_Command::Type::blockEnd;
+				blockEnd->id = a->id;
+				base->eirCommands.push_back( blockEnd );
+			}
+
 		}
 		else if( ast->type == AstExpr::Type::allocation )//todo del
 		{//Allocate a variable
@@ -180,6 +232,10 @@ namespace nigel
 			{
 				//parseAst( a->rVal );//Result to acc
 			}*/
+		}
+		else if( ast->type == AstExpr::Type::variable )
+		{//Single variable
+			//do nothing
 		}
 		else if( ast->type == AstExpr::Type::term )
 		{//Do some operation
@@ -484,6 +540,242 @@ namespace nigel
 			}
 
 			generateMoveA( ot, op );
+		}
+		else if( ast->type == AstExpr::Type::ifStat )
+		{//if statement
+			std::shared_ptr<AstIf> a = ast->as<AstIf>();
+
+			if( a->condition->type != AstExpr::Type::booleanParenthesis )
+				generateNotification( NT::err_expectParenthesisAfterIfKeyword, a->condition->token );
+			else
+			{
+				parseCondition( a->condition, varList );
+
+				if( a->elseCase == nullptr )
+				{//Without else block
+					addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//true
+					addCmd( HexOp::jmp_abs, EIR_Block::getBlockEnd( a->ifCase->id ) );//false
+					parseAst( a->ifCase, varList );
+				}
+				else
+				{//With else block
+					addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//true
+					addCmd( HexOp::jmp_abs, EIR_Block::getBlockBegin( a->elseCase->id ) );//false
+					parseAst( a->ifCase, varList );
+					addCmd( HexOp::jmp_abs, EIR_Block::getBlockEnd( a->elseCase->id ) );
+					parseAst( a->elseCase, varList );
+				}
+			}
+		}
+		else if( ast->type == AstExpr::Type::whileStat )
+		{//while statement
+			std::shared_ptr<AstWhile> a = ast->as<AstWhile>();
+
+			if( a->condition->type != AstExpr::Type::booleanParenthesis )
+				generateNotification( NT::err_expectParenthesisAfterWhileKeyword, a->condition->token );
+			else
+			{
+				u32 idB = EIR_Condition::getNextConditionPos();
+				u32 idE = EIR_Condition::getNextConditionPos();
+
+				auto conditionPos = std::make_shared<EIR_Command>();
+				conditionPos->type = EIR_Command::Type::conditionEnd;
+				conditionPos->id = idB;
+				base->eirCommands.push_back( conditionPos );
+
+				parseCondition( a->condition, varList );
+				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//true
+				addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idE, true ) );//false
+				parseAst( a->block, varList );
+				addCmd( HexOp::jmp_abs, EIR_Condition::getNew( idB, true ) );
+
+				conditionPos = std::make_shared<EIR_Command>();
+				conditionPos->type = EIR_Command::Type::conditionEnd;
+				conditionPos->id = idE;
+				base->eirCommands.push_back( conditionPos );
+			}
+		}
+		else generateNotification( NT::err_unknownASTExpr, ast->token );
+	}
+
+	void EIR_Parser::parseCondition( std::shared_ptr<AstExpr> ast, std::map<String, std::shared_ptr<EIR_Variable>> varList )
+	{
+		if( ast->type == AstExpr::Type::booleanParenthesis )
+		{//Parenthesis block
+			parseCondition( ast->as<AstBooleanParenthesis>()->content, varList );
+		}
+		else if( ast->type == AstExpr::Type::keywordCondition )
+		{//Keyword (true/false)
+			if( !ast->as<AstKeywordCondition>()->val )
+			{//Is false
+				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+		}
+		else if( ast->type == AstExpr::Type::arithmenticCondition )
+		{//Arithmetic expression will be converted into boolean expression (0=false)
+			auto ret = ast->as<AstArithmeticCondition>()->ret;
+			OperationType ot;//Operator type combination
+			std::shared_ptr<EIR_Operator> op;
+
+			//Memorize val
+			if( ret->type == AstExpr::Type::variable )
+			{
+				ot = OT::v;
+				op = varList[ret->as<AstVariable>()->name];
+			}
+			else if( ret->type == AstExpr::Type::literal )
+			{
+				ot = OT::c;
+				op = EIR_Constant::fromAstLiteral( ret->as<AstLiteral>() );
+			}
+			else if( ret->type == AstExpr::Type::term )
+			{
+				ot = OT::t;
+				parseAst( ret, varList );
+			}
+
+			generateMoveA( ot, op );
+			addCmd( HexOp::jmp_z_rel, EIR_Constant::fromConstant( 2 ) );
+		}
+		else if( ast->type == AstExpr::Type::comparisonCondition )
+		{//Comparison of two returnables
+			auto a = ast->as<AstComparisonCondition>();
+			OC comb;//Operator type combination
+			std::shared_ptr<EIR_Operator> lOp;
+			std::shared_ptr<EIR_Operator> rOp;
+
+			//Memorize rVal
+			if( a->rVal->type == AstExpr::Type::variable ) rOp = varList[a->rVal->as<AstVariable>()->name];
+			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
+			else if( a->rVal->type == AstExpr::Type::term ||
+					 a->rVal->type == AstExpr::Type::unary ||
+					 a->rVal->type == AstExpr::Type::parenthesis )
+			{
+				parseAst( a->rVal, varList );
+				if( a->lVal->type == AstExpr::Type::term ||
+					a->lVal->type == AstExpr::Type::unary ||
+					a->lVal->type == AstExpr::Type::parenthesis )//push to stack if OC::tt
+					addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::A ) );
+				else addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+			}
+			//Check lValue and combination
+			if( a->lVal->type == AstExpr::Type::variable )
+			{//lValue is a variable
+				lOp = varList[a->lVal->as<AstVariable>()->name];
+				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::vv;
+				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::vc;
+				else if( a->rVal->type == AstExpr::Type::term ||
+						 a->rVal->type == AstExpr::Type::unary ||
+						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::vt;
+			}
+			else if( a->lVal->type == AstExpr::Type::literal )
+			{//lValue is a constant
+				lOp = EIR_Constant::fromAstLiteral( a->lVal->as<AstLiteral>() );
+				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::cv;
+				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::cc;
+				else if( a->rVal->type == AstExpr::Type::term ||
+						 a->rVal->type == AstExpr::Type::unary ||
+						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::ct;
+			}
+			else if( a->lVal->type == AstExpr::Type::term ||
+					 a->lVal->type == AstExpr::Type::unary ||
+					 a->lVal->type == AstExpr::Type::parenthesis )
+			{//lValue is a term
+				parseAst( a->lVal, varList );
+				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
+				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
+				else if( a->rVal->type == AstExpr::Type::term ||
+						 a->rVal->type == AstExpr::Type::unary ||
+						 a->rVal->type == AstExpr::Type::parenthesis )
+				{//pop from stack to B
+					comb = OC::tt;
+					addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				}
+			}
+
+			//Handle operation
+			if( a->op == Token::Type::op_eql )
+			{// ==
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
+				addCmd( HexOp::jmp_nz_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+			else if( a->op == Token::Type::op_not_eql )
+			{// !=
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
+				addCmd( HexOp::jmp_z_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+			else if( a->op == Token::Type::op_less )
+			{// <
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
+				addCmd( HexOp::jmp_nc_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+			else if( a->op == Token::Type::op_more )
+			{// >
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
+				addCmd( HexOp::jmp_c_rel, EIR_Constant::fromConstant( 4 ) );
+				addCmd( HexOp::jmp_z_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+			else if( a->op == Token::Type::op_less_eql )
+			{// <=
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
+				addCmd( HexOp::jmp_c_rel, EIR_Constant::fromConstant( 2 ) );//Is true -> ignore next
+				addCmd( HexOp::jmp_nz_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+			else if( a->op == Token::Type::op_more_eql )
+			{// >=
+				addCmd( HexOp::clr_c );
+				generateOperation( comb, HexOp::sub_a_adr, HexOp::sub_a_const, HexOp::sub_a_atr0, lOp, rOp, a->token );
+				addCmd( HexOp::jmp_c_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+
+		}
+		else if( ast->type == AstExpr::Type::combinationCondition )
+		{//Combination of two conditionals
+			auto a = ast->as<AstComparisonCondition>();
+
+			if( a->op == Token::Type::op_and_log )
+			{// &&
+				u32 id = EIR_Condition::getNextConditionPos();
+
+				parseCondition( a->lVal, varList );
+				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );//true
+				addCmd( HexOp::jmp_abs, EIR_Condition::getNew( id, false ) );//false
+				parseCondition( a->rVal, varList );
+
+				auto conditionPos = std::make_shared<EIR_Command>();
+				conditionPos->type = EIR_Command::Type::conditionEnd;
+				conditionPos->id = id;
+				base->eirCommands.push_back( conditionPos );
+			}
+			else if( a->op == Token::Type::op_or_log )
+			{// ||
+				u32 id = EIR_Condition::getNextConditionPos();
+
+				parseCondition( a->lVal, varList );
+				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 2 ) );//true. Has to be a rel jmp because next command (2byte) will be false-jmp-destination.
+				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 3 ) );
+				addCmd( HexOp::jmp_abs, EIR_Condition::getNew( id, true ) );//true
+				parseCondition( a->rVal, varList );
+
+				auto conditionPos = std::make_shared<EIR_Command>();
+				conditionPos->type = EIR_Command::Type::conditionEnd;
+				conditionPos->id = id;
+				base->eirCommands.push_back( conditionPos );
+			}
+			else if( a->op == Token::Type::op_not )
+			{// !
+				parseCondition( a->lVal, varList );
+				addCmd( HexOp::jmp_rel, EIR_Constant::fromConstant( 2 ) );
+			}
+		}
+		else
+		{//Unknown condition ast
+			generateNotification( NT::err_expectConditionInParanthesis, ast->token );
 		}
 	}
 

@@ -21,6 +21,7 @@ namespace nigel
 		std::shared_ptr<AstExpr> lValue;//Current lValue
 		bool expectValue = false;//If a variable is expected. E. g. after operator
 		bool expectBool = false;//If a boolean paranthesis is expected.
+		bool blockHasHead = false;//If the following block has a head. E. g. a if block.
 		size_t openParenthesisCount = 0;
 		size_t openBraceCount = 0;
 
@@ -46,8 +47,15 @@ namespace nigel
 	private:
 		std::shared_ptr<AstExpr> resolveNextExpr();
 
+		//todo try to template the following methods
 		//Splits to the most right atomic expr with a same or higher priority from the lValue
-		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstReturning> cExpr, int priority );
+		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstTerm> cExpr, int priority );
+		//Splits to the most right atomic expr with a same or higher priority from the lValue
+		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstUnary> cExpr, int priority );
+		//Splits to the most right atomic expr with a same or higher priority from the lValue
+		std::shared_ptr<AstCondition> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstCombinationCondition> cExpr, int priority );
+		//Splits to the most right atomic expr with a same or higher priority from the lValue
+		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstComparisonCondition> cExpr, int priority );
 
 	};
 }

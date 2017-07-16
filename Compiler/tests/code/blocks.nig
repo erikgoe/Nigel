@@ -1,12 +1,8 @@
 byte a = 10;
-byte b = 12;
+byte b = 11;
 
-byte c = 0;
-if( true )
-{
-	c = b;
-}
-else
+byte c = 3;
+if( c > 3 )
 {
 	c = a;
 }
