@@ -47,6 +47,7 @@ namespace nigel
 			err_unexpectedReturningBeforeLiteral,
 			err_unexpectedReturningBeforeParenthesisBlock,
 			err_unexpectedReturningBeforeBlock,
+			err_unexpectedReturningBeforeFunctionDeklaration,
 			err_expectedIdentifierBeforeOperator,
 			err_expectedIdentifierAfterOperator,
 			err_expectedExprWithReturnValue_atOperation,
@@ -83,10 +84,24 @@ namespace nigel
 			err_comparisonConditionCannotBeThisRValue,
 			err_unexpectedIdentifierBeforeNotOperator,
 
+			err_operationsAreNotAllowedInGlobalScope,
+			err_functionDefinitionsAreNotAllowedInLocalScope,
+
+			err_unknownTypeAtFunction,
+			err_expectedIdentifier_atFunction,
+			err_expectedOpeningParenthesis_atFunction,
+			err_unknownTypeAtFunctionParameter,
+			err_unknownTokenAfterFunctionParameter,
+			err_expectedBlockAfterFunctionHead,
+
 			err_unknownASTExpr,
 			err_cannotBreakAtThisPosition,
 
-			err_blockNotFound,
+			err_internal_blockNotFound,
+			err_internal_conditionalNotFound,
+			err_functionDefinitionNotFound,
+			err_mainEntryPointNotFound,
+			err_symbolIsAlreadyDefined,
 
 
 			begin_warning = 0x7fff,//All warnings will start at this position.

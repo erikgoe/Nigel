@@ -113,6 +113,11 @@ namespace nigel
 		bool isLineComment = false;//If is comment from // untile lineend
 		bool isMultiComment = false;//If is multiline-comment with /* */
 		int multiCommentCount = 0;//Enables nested comments
+		if( !base.fileCont.empty() )
+		{
+			currLine = base.fileCont[0].content;
+			currPath = base.fileCont[0].path;
+		}
 
 		while( !finish )
 		{//Iterate whole file content

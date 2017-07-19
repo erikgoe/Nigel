@@ -7,12 +7,12 @@ namespace nigel
 	{
 		if( type == Token::Type::eof ) return "_!EOF!_";
 		else if( type == Token::Type::ppEnd ) return "PP-END";
-		else if( type == Token::Type::function ) return "function";
+		else if( type == Token::Type::function ) return "fn";
 		else if( type == Token::Type::type_byte ) return "byte";
 		else if( type == Token::Type::type_int ) return "int";
 		else if( type == Token::Type::unsigned_attr ) return "unsigned";
-		else if( type == Token::Type::fast_attr ) return "unsigned";
-		else if( type == Token::Type::norm_attr ) return "unsigned";
+		else if( type == Token::Type::fast_attr ) return "fast";
+		else if( type == Token::Type::norm_attr ) return "norm";
 		else if( type == Token::Type::cf_if ) return "if";
 		else if( type == Token::Type::cf_else ) return "else";
 		else if( type == Token::Type::cf_while ) return "while";

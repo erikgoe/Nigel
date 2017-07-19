@@ -105,8 +105,9 @@ namespace nigel
 		notificationTexts[NT::err_unexpectedReturningBeforeUnsignedKeyword] = "Unexpected returnable before unsigned keyword.";
 		notificationTexts[NT::err_unexpectedReturningBeforeIdentifier] = "Unexpected returnable before identifier.";
 		notificationTexts[NT::err_unexpectedReturningBeforeLiteral] = "Unexpected returnable before literal.";
-		notificationTexts[NT::err_unexpectedReturningBeforeParenthesisBlock] = "Unexpected retunrable before parenthesis block.";
-		notificationTexts[NT::err_unexpectedReturningBeforeBlock] = "Unexpected retunrable before block.";
+		notificationTexts[NT::err_unexpectedReturningBeforeParenthesisBlock] = "Unexpected returnable before parenthesis block.";
+		notificationTexts[NT::err_unexpectedReturningBeforeBlock] = "Unexpected returnable before block.";
+		notificationTexts[NT::err_unexpectedReturningBeforeFunctionDeklaration] = "Unexpected returnable before function.";
 		notificationTexts[NT::err_expectedIdentifierBeforeOperator] = "Exptected Identifiern before operation.";
 		notificationTexts[NT::err_expectedIdentifierAfterOperator] = "Exptected Identifiern after operation.";
 		notificationTexts[NT::err_expectedExprWithReturnValue_atOperation] = "Expected expression or value as rValue at operation.";
@@ -142,10 +143,24 @@ namespace nigel
 		notificationTexts[NT::err_comparisonConditionCannotBeThisRValue] = "A comparison condition cannot be the rValue of this expressions.";
 		notificationTexts[NT::err_unexpectedIdentifierBeforeNotOperator] = "Unexpected identifier before 'not' operator.";
 
+		notificationTexts[NT::err_operationsAreNotAllowedInGlobalScope] = "Operations can't be done in the global scope.";
+		notificationTexts[NT::err_functionDefinitionsAreNotAllowedInLocalScope] = "Functions can't be defined in the local scope.";
+
+		notificationTexts[NT::err_unknownTypeAtFunction] = "Unknown type at function deklaration.";
+		notificationTexts[NT::err_expectedIdentifier_atFunction] = "Expected identifier at function deklaration.";
+		notificationTexts[NT::err_expectedOpeningParenthesis_atFunction] = "Expected opening parenthesis at function deklaration.";
+		notificationTexts[NT::err_unknownTypeAtFunctionParameter] = "Unknown type at function parameter.";
+		notificationTexts[NT::err_unknownTokenAfterFunctionParameter] = "Unknown token after function parameter.";
+		notificationTexts[NT::err_expectedBlockAfterFunctionHead] = "Expected block after function head.";
+
 		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
 		notificationTexts[NT::err_cannotBreakAtThisPosition] = "Can't break out of this or outer scope.";
 
-		notificationTexts[NT::err_blockNotFound] = "Block was not found.";
+		notificationTexts[NT::err_internal_blockNotFound] = "Internal error: block was not found.";
+		notificationTexts[NT::err_internal_conditionalNotFound] = "Internal error: condition was not found.";
+		notificationTexts[NT::err_functionDefinitionNotFound] = "Function definition was not found.";
+		notificationTexts[NT::err_mainEntryPointNotFound] = "Main entry point not found! Please define the main function.";
+		notificationTexts[NT::err_symbolIsAlreadyDefined] = "This symbol is already defined.";
 
 
 		notificationTexts[NT::warn_warningDirective] = "waring directive.";

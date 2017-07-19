@@ -30,6 +30,7 @@ namespace nigel
 
 			breakStat,
 
+			functionDefinition,
 			functionCall,
 			returnStat,
 
@@ -92,6 +93,7 @@ namespace nigel
 		large,//Globals in extern ram
 		stack,//Locals on stack
 		heap,//Dynamically allocated
+		param,//Parameter similar to stack
 
 		count
 	};
@@ -102,13 +104,18 @@ namespace nigel
 	public:
 		BasicType retType;
 
+		static String returnTypeString( BasicType type )
+		{
+			if( type == tByte ) return "byte";
+			else if( type == tInt ) return "int";
+			else if( type == tUbyte ) return "unsigned byte";
+			else if( type == tUint ) return "unsigned int";
+			else return "-!-UNKNOWN-!-";
+		}
+
 		String returnTypeString()
 		{
-			if( retType == tByte ) return "byte";
-			else if( retType == tInt ) return "int";
-			else if( retType == tUbyte ) return "unsigned byte";
-			else if( retType == tUint ) return "unsigned int";
-			else return "-!-UNKNOWN-!-";
+			return returnTypeString( retType );
 		}
 
 		AstReturning( AstExpr::Type type ) : AstExpr( type ) {}
@@ -129,6 +136,7 @@ namespace nigel
 			else if( model == MemModel::large ) return "large";
 			else if( model == MemModel::stack ) return "stack";
 			else if( model == MemModel::heap ) return "heap";
+			else if( model == MemModel::param ) return "param";
 			else return "-!-UNKNOWN-!-";
 		}
 
@@ -229,7 +237,6 @@ namespace nigel
 		AstWhile() : AstExpr( AstExpr::Type::whileStat ) {}
 	};
 
-
 		//true/false-keyword
 	class AstKeywordCondition : public AstCondition
 	{
@@ -268,6 +275,19 @@ namespace nigel
 		Token::Type op;
 
 		AstCombinationCondition() : AstCondition( AstExpr::Type::combinationCondition ) {}
+	};
+
+
+		//A function definition
+	class AstFunction : public AstExpr
+	{
+	public:
+		String symbol;
+		std::list<VariableBinding> parameters;//All available variables.
+		BasicType retType;
+		std::shared_ptr<AstBlock> content;
+
+		AstFunction() : AstExpr( AstExpr::Type::functionDefinition ) {}
 	};
 
 }

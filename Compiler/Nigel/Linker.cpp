@@ -12,17 +12,32 @@ namespace nigel
 		std::map<u32, u16> blockEndAddresses;//Already created blocks. Id of a block mapped to the address in hexBuffer.
 		std::map<u32, std::list<u16>> missingBeginBlocks;//These addresses should be overwritten, if the corresponding block was created.
 		std::map<u32, std::list<u16>> missingEndBlocks;//These addresses should be overwritten, if the corresponding block was created.
+		
 		std::map<u32, u16> conditionEnds_true;//Already created conditions. Id of a condition mapped to the address in hexBuffer.
 		std::map<u32, u16> conditionEnds_false;//Already created conditions. Id of a condition mapped to the address in hexBuffer.
 		std::map<u32, u16> missingConditionEnds_true;//These addresses should be overwritten, if the corresponding condition was finished.
 		std::map<u32, u16> missingConditionEnds_false;//These addresses should be overwritten, if the corresponding condition was finished.
 
+		std::map<String, u16> symbolAddresses;//Already created symbols/functions. Id of a function mapped to the address in hexBuffer.
+		std::map<String, std::list<u16>> missingSymbols;//These addresses should be overwritten, if the corresponding function was created.
 
 
-		//Initialize the machine
-		base.hexBuffer.push_back( 0x75 );//mov
-		base.hexBuffer.push_back( 0x07 );//BR
-		base.hexBuffer.push_back( 0x00 );//0
+		{//Initialize the machine
+			base.hexBuffer.resize( 0x33 );//Insert empty space for interrupts, etc.
+
+			//Jmp to init code
+			base.hexBuffer[0x00] = 0x80;//jmp_rel
+			base.hexBuffer[0x01] = 0x29;//to init code
+
+			//<reserved for interrupt calls>
+
+			//Init, call main and then loop infinitely
+			base.hexBuffer[0x2B] = 0x75;//mov_const
+			base.hexBuffer[0x2C] = 0x07;//BR
+			//<reserved for main call>
+			base.hexBuffer[0x31] = 0x80;//jmp_rel
+			base.hexBuffer[0x32] = 0xFE;//to itselfe
+		}
 
 
 		{//Set address of values
@@ -230,6 +245,119 @@ namespace nigel
 					}
 					missingBeginBlocks.erase( c->id );
 				}
+
+				if( symbolAddresses.find( c->symbol ) != symbolAddresses.end() )
+				{//Already defined symbol found
+					generateNotification( NT::err_symbolIsAlreadyDefined, std::make_shared<String>( c->symbol ), -1, base.srcFile );
+				}
+				symbolAddresses[c->symbol] = address;
+				if( missingSymbols.find( c->symbol ) != missingSymbols.end() )
+				{
+					for( auto &a : missingSymbols[c->symbol] )
+					{
+						base.hexBuffer[a] = static_cast< u8 >( address << 8 );
+						base.hexBuffer[a + 1] = static_cast< u8 >( address );
+					}
+					missingSymbols.erase( c->symbol );
+				}
+
+
+				if( c->symbol == "main" )
+				{//Main function
+					base.hexBuffer[0x2E] = 0x12;//call_abs
+					base.hexBuffer[0x2F] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x30] = static_cast< u8 >( address );
+				}
+				else if( c->symbol == "interrupt0" )
+				{//Interrupt 0 without EA disabled
+					base.hexBuffer[0x03] = 0x12;//call_abs
+					base.hexBuffer[0x04] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x05] = static_cast< u8 >( address );
+					base.hexBuffer[0x06] = 0x32;//reti
+				}
+				else if( c->symbol == "interrupt0_ea" )
+				{//Interrupt 0 with EA disabled
+					base.hexBuffer[0x03] = 0xC2;//clr_bit
+					base.hexBuffer[0x04] = 0xAF;//EA
+					base.hexBuffer[0x05] = 0x12;//call_abs
+					base.hexBuffer[0x06] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x07] = static_cast< u8 >( address );
+					base.hexBuffer[0x08] = 0xD2;//set_bit
+					base.hexBuffer[0x09] = 0xAF;//EA
+					base.hexBuffer[0x0A] = 0x32;//reti
+				}
+				else if( c->symbol == "timer0" )
+				{//Timer 0 without EA disabled
+					base.hexBuffer[0x0B] = 0x12;//call_abs
+					base.hexBuffer[0x0C] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x0D] = static_cast< u8 >( address );
+					base.hexBuffer[0x0E] = 0x32;//reti
+				}
+				else if( c->symbol == "timer0_ea" )
+				{//Timer 0 with EA disabled
+					base.hexBuffer[0x0B] = 0xC2;//clr_bit
+					base.hexBuffer[0x0C] = 0xAF;//EA
+					base.hexBuffer[0x0D] = 0x12;//call_abs
+					base.hexBuffer[0x0E] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x0F] = static_cast< u8 >( address );
+					base.hexBuffer[0x10] = 0xD2;//set_bit
+					base.hexBuffer[0x11] = 0xAF;//EA
+					base.hexBuffer[0x12] = 0x32;//reti
+				}
+				else if( c->symbol == "interrupt1" )
+				{//Interrupt 1 without EA disabled
+					base.hexBuffer[0x13] = 0x12;//call_abs
+					base.hexBuffer[0x14] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x15] = static_cast< u8 >( address );
+					base.hexBuffer[0x16] = 0x32;//reti
+				}
+				else if( c->symbol == "interrupt1_ea" )
+				{//Interrupt 1 with EA disabled
+					base.hexBuffer[0x13] = 0xC2;//clr_bit
+					base.hexBuffer[0x14] = 0xAF;//EA
+					base.hexBuffer[0x15] = 0x12;//call_abs
+					base.hexBuffer[0x16] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x17] = static_cast< u8 >( address );
+					base.hexBuffer[0x18] = 0xD2;//set_bit
+					base.hexBuffer[0x19] = 0xAF;//EA
+					base.hexBuffer[0x1A] = 0x32;//reti
+				}
+				else if( c->symbol == "timer1" )
+				{//Timer 1 without EA disabled
+					base.hexBuffer[0x1B] = 0x12;//call_abs
+					base.hexBuffer[0x1C] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x1D] = static_cast< u8 >( address );
+					base.hexBuffer[0x1E] = 0x32;//reti
+				}
+				else if( c->symbol == "timer1_ea" )
+				{//Timer 1 with EA disabled
+					base.hexBuffer[0x1B] = 0xC2;//clr_bit
+					base.hexBuffer[0x1C] = 0xAF;//EA
+					base.hexBuffer[0x1D] = 0x12;//call_abs
+					base.hexBuffer[0x1E] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x1F] = static_cast< u8 >( address );
+					base.hexBuffer[0x20] = 0xD2;//set_bit
+					base.hexBuffer[0x21] = 0xAF;//EA
+					base.hexBuffer[0x22] = 0x32;//reti
+				}
+				else if( c->symbol == "serialio" )
+				{//Serial I/O without EA disabled
+					base.hexBuffer[0x23] = 0x12;//call_abs
+					base.hexBuffer[0x24] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x25] = static_cast< u8 >( address );
+					base.hexBuffer[0x26] = 0x32;//reti
+				}
+				else if( c->symbol == "serialio_ea" )
+				{//Serial I/O with EA disabled
+					base.hexBuffer[0x23] = 0xC2;//clr_bit
+					base.hexBuffer[0x24] = 0xAF;//EA
+					base.hexBuffer[0x25] = 0x12;//call_abs
+					base.hexBuffer[0x26] = static_cast< u8 >( address << 8 );
+					base.hexBuffer[0x27] = static_cast< u8 >( address );
+					base.hexBuffer[0x28] = 0xD2;//set_bit
+					base.hexBuffer[0x29] = 0xAF;//EA
+					base.hexBuffer[0x2A] = 0x32;//reti
+				}
 			}
 			else if( c->type == EIR_Command::Type::blockEnd )
 			{//End of a block
@@ -268,13 +396,23 @@ namespace nigel
 			}
 		}
 
-		//Add infinite loop
-		base.hexBuffer.push_back( 128 );
-		base.hexBuffer.push_back( 254 );
 
-		if( !missingBeginBlocks.empty() || !missingBeginBlocks.empty() )
+		//Error reporting
+		if( !missingBeginBlocks.empty() || !missingEndBlocks.empty() )
 		{
-			generateNotification( NT::err_blockNotFound, base.srcFile );
+			generateNotification( NT::err_internal_blockNotFound, base.srcFile );
+		}
+		if( !missingConditionEnds_true.empty() || !missingConditionEnds_false.empty() )
+		{
+			generateNotification( NT::err_internal_conditionalNotFound, base.srcFile );
+		}
+		if( !missingSymbols.empty() )
+		{
+			generateNotification( NT::err_functionDefinitionNotFound, base.srcFile );
+		}
+		if( symbolAddresses.find( "main" ) == symbolAddresses.end() )
+		{
+			generateNotification( NT::err_mainEntryPointNotFound, base.srcFile );
 		}
 
 		printToFile( base.hexBuffer, *base.destFile );

@@ -75,6 +75,10 @@ namespace nigel
 
 		cpl_a = 0xF4,
 
+		cpl_bit = 0xB2,
+		clr_bit = 0xC2,
+		set_bit = 0xD2,
+
 		jmp_abs = 0x02,
 		jmp_rel = 0x80,
 		jmp_c_rel = 0x40,
@@ -236,6 +240,7 @@ namespace nigel
 	};
 
 
+
 		//Single command
 	class EIR_Command
 	{
@@ -253,6 +258,7 @@ namespace nigel
 		std::shared_ptr<EIR_Operator> op2 = nullptr;//Second operator
 
 		u32 id = 0;//Is used in case of blockBegin || blockEnd.
+		String symbol;//If the block has a symbol (in case of a function)
 
 		EIR_Command() {}
 

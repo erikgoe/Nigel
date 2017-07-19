@@ -23,6 +23,7 @@ namespace nigel
 		bool expectBool = false;//If a boolean paranthesis is expected.
 		bool blockHasHead = false;//If the following block has a head. E. g. a if block.
 		bool previousDo = false;//If the previous was the do keyword.
+		std::list<VariableBinding> functionParameters;//List of parameters (to extend the local variables)
 		size_t openParenthesisCount = 0;
 		size_t openBraceCount = 0;
 

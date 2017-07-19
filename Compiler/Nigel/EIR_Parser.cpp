@@ -187,6 +187,8 @@ namespace nigel
 				auto blockBegin = std::make_shared<EIR_Command>();
 				blockBegin->type = EIR_Command::Type::blockBegin;
 				blockBegin->id = a->id;
+				blockBegin->symbol = currSymbol;
+				currSymbol = "";
 				base->eirCommands.push_back( blockBegin );
 
 				breakableIDs.push( a->id );
@@ -603,6 +605,15 @@ namespace nigel
 				addCmd( HexOp::jmp_abs, EIR_Block::getBlockEnd( breakableIDs.top() ) );
 			}
 			else generateNotification( NT::err_cannotBreakAtThisPosition, ast->token );
+		}
+		else if( ast->type == AstExpr::Type::functionDefinition )
+		{//Definition of a function
+			std::shared_ptr<AstFunction> a = ast->as<AstFunction>();
+
+			currSymbol = a->symbol;
+			parseAst( a->content, varList );
+
+			addCmd( HexOp::ret );
 		}
 		else if( ast->type != AstExpr::Type::allocation &&
 				 ast->type == AstExpr::Type::variable &&

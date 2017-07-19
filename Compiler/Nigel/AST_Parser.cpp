@@ -154,6 +154,14 @@ namespace nigel
 			out = tabs + "<BREAK>";
 			log( out );
 		}
+		else if( ast->type == AstExpr::Type::functionDefinition )
+		{//Function definition
+			auto f = ast->as<AstFunction>();
+			out = tabs + "<FUNC> " + f->symbol + " : "
+				+ AstReturning::returnTypeString( f->retType );
+			log( out );
+			printSubAST( f->content, tabCount + 1 );
+		}
 
 
 		if( ast->type == AstExpr::Type::block )
@@ -455,233 +463,242 @@ namespace nigel
 		}
 		else if( token->isOperator() )
 		{//Expression is a term or a unary
-			if( token->type == TT::op_inc || token->type == TT::op_dec ||
-				( expectValue && ( token->type == TT::op_inv || token->type == TT::op_sub || token->type == TT::op_add || token->type == TT::op_not ) ) )
-			{//Unary
-				std::shared_ptr<AstUnary> newAst = std::make_shared<AstUnary>();
-				newAst->token = token;
-				newAst->op = token->type;
+			if( blockStack.size() <= 1 )
+			{//Is in global scope!
+				generateNotification( NT::err_operationsAreNotAllowedInGlobalScope, token );
+				ignoreExpr();
+				return nullptr;
+			}
+			else
+			{//Not global
+				if( token->type == TT::op_inc || token->type == TT::op_dec ||
+					( expectValue && ( token->type == TT::op_inv || token->type == TT::op_sub || token->type == TT::op_add || token->type == TT::op_not ) ) )
+				{//Unary
+					std::shared_ptr<AstUnary> newAst = std::make_shared<AstUnary>();
+					newAst->token = token;
+					newAst->op = token->type;
 
-				if( expectValue )
-				{//L operator
-					newAst->side = AstUnary::Side::left;
+					if( expectValue )
+					{//L operator
+						newAst->side = AstUnary::Side::left;
 
-					//Check value
+						//Check value
+						expectValue = true;
+						std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+						if( nextAst == nullptr )
+						{//no value
+							generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+							expectValue = false;
+							return nullptr;
+						}
+						if( !nextAst->isTypeReturnable() )
+						{//lValue is not a returnable
+							generateNotification( NT::err_expectedExprWithReturnValue_atOperation, currToken );
+							ignoreExpr();
+							return newAst;
+						}
+						newAst->val = nextAst->as<AstReturning>();
+					}
+					else
+					{//R operator
+						newAst->side = AstUnary::Side::right;
+
+						newAst->val = splitMostRightExpr( lValue, newAst, opPriority[token->type] );
+					}
+
+					newAst->retType = newAst->val->retType;
+					expectValue = false;
+					lValue = newAst;
+					return newAst;
+				}
+				else if( token->type == TT::op_eql || token->type == TT::op_not_eql ||
+						 token->type == TT::op_less || token->type == TT::op_more || token->type == TT::op_less_eql || token->type == TT::op_more_eql )
+				{//Comparison operation
+					std::shared_ptr<AstComparisonCondition> newAst = std::make_shared<AstComparisonCondition>();
+					newAst->token = token;
+
+					if( lValue == nullptr )
+					{//Check if has lValue
+						generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
+						ignoreExpr();
+						return nullptr;
+					}
+					newAst->op = token->type;
+
+					auto prevLValue = lValue;
+					bool prevExpectBool = expectBool;
+
+					//Check rValue
+					expectBool = false;
 					expectValue = true;
+					lValue = nullptr;
 					std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+					expectBool = prevExpectBool;//Reset
+
 					if( nextAst == nullptr )
-					{//no value
+					{//no rValue
 						generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
 						expectValue = false;
 						return nullptr;
 					}
 					if( !nextAst->isTypeReturnable() )
-					{//lValue is not a returnable
+					{//rValue is not a arithmethic expression
 						generateNotification( NT::err_expectedExprWithReturnValue_atOperation, currToken );
 						ignoreExpr();
 						return newAst;
 					}
-					newAst->val = nextAst->as<AstReturning>();
+					newAst->rVal = nextAst->as<AstReturning>();
+					newAst->lVal = splitMostRightExpr( prevLValue, newAst, opPriority[newAst->op] );
+
+					expectValue = false;
+
+					if( prevLValue != newAst->lVal ) lValue = prevLValue;
+					else lValue = newAst;
+					return newAst;
+				}
+				else if( token->type == TT::op_and_log || token->type == TT::op_or_log )
+				{//Conditional expression
+					std::shared_ptr<AstCombinationCondition> newAst = std::make_shared<AstCombinationCondition>();
+					newAst->token = token;
+
+					if( lValue == nullptr )
+					{//Check if has lValue
+						generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
+						ignoreExpr();
+						return nullptr;
+					}
+					newAst->op = token->type;
+
+					auto prevLValue = lValue;
+
+					//Check rValue
+					expectValue = true;
+					lValue = nullptr;
+					std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+					if( nextAst == nullptr )
+					{//no rValue
+						generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+						expectValue = false;
+						return nullptr;
+					}
+					if( !nextAst->isTypeCondition() )
+					{//rValue is not a conditional
+						if( nextAst->isTypeReturnable() )
+						{
+							auto condition = std::make_shared<AstArithmeticCondition>();
+							condition->ret = nextAst->as<AstReturning>();
+							newAst->rVal = condition;
+						}
+						else
+						{
+							generateNotification( NT::err_expectedExprWithConditionalValue_atOperation, currToken );
+							ignoreExpr();
+							return newAst;
+						}
+					}
+					else newAst->rVal = nextAst->as<AstCondition>();
+
+					newAst->lVal = splitMostRightExpr( prevLValue, newAst, opPriority[newAst->op] );
+
+					expectValue = false;
+
+					if( prevLValue != newAst->lVal ) lValue = prevLValue;
+					else lValue = newAst;
+					return newAst;
+				}
+				else if( token->type == TT::op_not )
+				{//not-operator
+					std::shared_ptr<AstCombinationCondition> newAst = std::make_shared<AstCombinationCondition>();
+					newAst->token = token;
+
+					if( lValue != nullptr )
+					{//Check if has lValue
+						generateNotification( NT::err_unexpectedIdentifierBeforeNotOperator, currToken );
+						ignoreExpr();
+						return nullptr;
+					}
+					newAst->op = token->type;
+
+					auto prevLValue = lValue;
+
+					//Check rValue
+					expectValue = true;
+					lValue = nullptr;
+					std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+					if( nextAst == nullptr )
+					{//no rValue
+						generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+						expectValue = false;
+						return nullptr;
+					}
+					if( !nextAst->isTypeCondition() )
+					{//rValue is not a conditional
+						if( nextAst->isTypeReturnable() )
+						{
+							auto condition = std::make_shared<AstArithmeticCondition>();
+							condition->ret = nextAst->as<AstReturning>();
+							newAst->rVal = condition;
+						}
+						else
+						{
+							generateNotification( NT::err_expectedExprWithConditionalValue_atOperation, currToken );
+							ignoreExpr();
+							return newAst;
+						}
+					}
+					else newAst->rVal = nextAst->as<AstCondition>();
+
+					expectValue = false;
+
+					lValue = newAst;
+					return newAst;
 				}
 				else
-				{//R operator
-					newAst->side = AstUnary::Side::right;
+				{//Artithmetic term
+					std::shared_ptr<AstTerm> newAst = std::make_shared<AstTerm>();
+					newAst->token = token;
 
-					newAst->val = splitMostRightExpr( lValue, newAst, opPriority[token->type] );
-				}
-
-				newAst->retType = newAst->val->retType;
-				expectValue = false;
-				lValue = newAst;
-				return newAst;
-			}
-			else if( token->type == TT::op_eql || token->type == TT::op_not_eql ||
-					 token->type == TT::op_less || token->type == TT::op_more || token->type == TT::op_less_eql || token->type == TT::op_more_eql )
-			{//Comparison operation
-				std::shared_ptr<AstComparisonCondition> newAst = std::make_shared<AstComparisonCondition>();
-				newAst->token = token;
-
-				if( lValue == nullptr )
-				{//Check if has lValue
-					generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
-					ignoreExpr();
-					return nullptr;
-				}
-				newAst->op = token->type;
-
-				auto prevLValue = lValue;
-				bool prevExpectBool = expectBool;
-
-				//Check rValue
-				expectBool = false;
-				expectValue = true;
-				lValue = nullptr;
-				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-				expectBool = prevExpectBool;//Reset
-
-				if( nextAst == nullptr )
-				{//no rValue
-					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
-					expectValue = false;
-					return nullptr;
-				}
-				if( !nextAst->isTypeReturnable() )
-				{//rValue is not a arithmethic expression
-					generateNotification( NT::err_expectedExprWithReturnValue_atOperation, currToken );
-					ignoreExpr();
-					return newAst;
-				}
-				newAst->rVal = nextAst->as<AstReturning>();
-				newAst->lVal = splitMostRightExpr( prevLValue, newAst, opPriority[newAst->op] );
-
-				expectValue = false;
-
-				if( prevLValue != newAst->lVal ) lValue = prevLValue;
-				else lValue = newAst;
-				return newAst;
-			}
-			else if( token->type == TT::op_and_log || token->type == TT::op_or_log )
-			{//Conditional expression
-				std::shared_ptr<AstCombinationCondition> newAst = std::make_shared<AstCombinationCondition>();
-				newAst->token = token;
-
-				if( lValue == nullptr )
-				{//Check if has lValue
-					generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
-					ignoreExpr();
-					return nullptr;
-				}
-				newAst->op = token->type;
-
-				auto prevLValue = lValue;
-
-				//Check rValue
-				expectValue = true;
-				lValue = nullptr;
-				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-				if( nextAst == nullptr )
-				{//no rValue
-					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
-					expectValue = false;
-					return nullptr;
-				}
-				if( !nextAst->isTypeCondition() )
-				{//rValue is not a conditional
-					if( nextAst->isTypeReturnable() )
-					{
-						auto condition = std::make_shared<AstArithmeticCondition>();
-						condition->ret = nextAst->as<AstReturning>();
-						newAst->rVal = condition;
+					if( lValue == nullptr )
+					{//Check if has lValue
+						generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
+						ignoreExpr();
+						return nullptr;
 					}
-					else
-					{
-						generateNotification( NT::err_expectedExprWithConditionalValue_atOperation, currToken );
+					newAst->op = token->type;
+
+					auto prevLValue = lValue;
+
+					//Check rValue
+					expectValue = true;
+					lValue = nullptr;
+					std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+					if( nextAst == nullptr )
+					{//no rValue
+						generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+						expectValue = false;
+						return nullptr;
+					}
+					if( !nextAst->isTypeReturnable() )
+					{//rValue is not a returnable
+						generateNotification( NT::err_expectedExprWithReturnValue_atOperation, currToken );
 						ignoreExpr();
 						return newAst;
 					}
-				}
-				else newAst->rVal = nextAst->as<AstCondition>();
+					newAst->rVal = nextAst->as<AstReturning>();
 
-				newAst->lVal = splitMostRightExpr( prevLValue, newAst, opPriority[newAst->op] );
+					if( prevLValue->type == AstExpr::Type::term && newAst->op == TT::op_set ) newAst->op = TT::op_set_get;
+					newAst->lVal = splitMostRightExpr( prevLValue, newAst, opPriority[newAst->op] );
 
-				expectValue = false;
+					if( newAst->rVal->retType != newAst->lVal->retType )
+						generateNotification( NT::err_unmatchingTypeFound_atTerm, token );
+					else newAst->retType = newAst->lVal->retType;
 
-				if( prevLValue != newAst->lVal ) lValue = prevLValue;
-				else lValue = newAst;
-				return newAst;
-			}
-			else if( token->type == TT::op_not )
-			{//not-operator
-				std::shared_ptr<AstCombinationCondition> newAst = std::make_shared<AstCombinationCondition>();
-				newAst->token = token;
-
-				if( lValue != nullptr )
-				{//Check if has lValue
-					generateNotification( NT::err_unexpectedIdentifierBeforeNotOperator, currToken );
-					ignoreExpr();
-					return nullptr;
-				}
-				newAst->op = token->type;
-
-				auto prevLValue = lValue;
-
-				//Check rValue
-				expectValue = true;
-				lValue = nullptr;
-				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-				if( nextAst == nullptr )
-				{//no rValue
-					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
 					expectValue = false;
-					return nullptr;
-				}
-				if( !nextAst->isTypeCondition() )
-				{//rValue is not a conditional
-					if( nextAst->isTypeReturnable() )
-					{
-						auto condition = std::make_shared<AstArithmeticCondition>();
-						condition->ret = nextAst->as<AstReturning>();
-						newAst->rVal = condition;
-					}
-					else
-					{
-						generateNotification( NT::err_expectedExprWithConditionalValue_atOperation, currToken );
-						ignoreExpr();
-						return newAst;
-					}
-				}
-				else newAst->rVal = nextAst->as<AstCondition>();
 
-				expectValue = false;
-
-				lValue = newAst;
-				return newAst;
-			}
-			else
-			{//Artithmetic term
-				std::shared_ptr<AstTerm> newAst = std::make_shared<AstTerm>();
-				newAst->token = token;
-
-				if( lValue == nullptr )
-				{//Check if has lValue
-					generateNotification( NT::err_expectedIdentifierBeforeOperator, currToken );
-					ignoreExpr();
-					return nullptr;
-				}
-				newAst->op = token->type;
-
-				auto prevLValue = lValue;
-
-				//Check rValue
-				expectValue = true;
-				lValue = nullptr;
-				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-				if( nextAst == nullptr )
-				{//no rValue
-					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
-					expectValue = false;
-					return nullptr;
-				}
-				if( !nextAst->isTypeReturnable() )
-				{//rValue is not a returnable
-					generateNotification( NT::err_expectedExprWithReturnValue_atOperation, currToken );
-					ignoreExpr();
+					if( prevLValue != newAst->lVal ) lValue = prevLValue;
+					else lValue = newAst;
 					return newAst;
 				}
-				newAst->rVal = nextAst->as<AstReturning>();
-
-				if( prevLValue->type == AstExpr::Type::term && newAst->op == TT::op_set ) newAst->op = TT::op_set_get;
-				newAst->lVal = splitMostRightExpr( prevLValue, newAst, opPriority[newAst->op] );
-
-				if( newAst->rVal->retType != newAst->lVal->retType )
-					generateNotification( NT::err_unmatchingTypeFound_atTerm, token );
-				else newAst->retType = newAst->lVal->retType;
-
-				expectValue = false;
-
-				if( prevLValue != newAst->lVal ) lValue = prevLValue;
-				else lValue = newAst;
-				return newAst;
 			}
 		}
 		else if( token->type == TT::tok_parenthesis_open )
@@ -788,6 +805,7 @@ namespace nigel
 
 			newAst->variables.insert( newAst->variables.begin(), blockStack.top()->variables.begin(), blockStack.top()->variables.end() );
 			for( auto &v : newAst->variables ) v.second++;//Increment scope offset.
+			for( auto &v : functionParameters ) newAst->variables.push_back( std::pair<VariableBinding, size_t>( v, 0 ) );
 			blockStack.push( newAst );
 
 			while( myOpenBraceNr <= openBraceCount )//Iterate for this block
@@ -814,83 +832,17 @@ namespace nigel
 		}
 		else if( token->type == TT::cf_if )
 		{//Open a new if condition expression
-			std::shared_ptr<AstIf> newAst = std::make_shared<AstIf>();
-			newAst->token = token;
-
-			//Condition
-			expectBool = true;
-			std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-			if( nextAst->type != AstExpr::Type::booleanParenthesis )
-			{
-				generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+			if( blockStack.size() <= 1 )
+			{//Is in global scope!
+				generateNotification( NT::err_operationsAreNotAllowedInGlobalScope, token );
+				ignoreExpr();
 				return nullptr;
-			}
-			newAst->condition = nextAst->as<AstBooleanParenthesis>();
-			expectBool = false;
-			lValue = nullptr;
-
-			//If case block
-			blockHasHead = true;
-			nextAst = resolveNextExpr();
-			if( nextAst->type != AstExpr::Type::block )
-			{
-				generateNotification( NT::err_expectBlockAfterIf, currToken );
-				return nullptr;
-			}
-			newAst->ifCase = nextAst->as<AstBlock>();
-
-			//Else case block
-			blockHasHead = true;
-			nextAst = resolveNextExpr();
-			if( nextAst != nullptr && nextAst->type == AstExpr::Type::elseStat )
-			{
-				nextAst = resolveNextExpr();
-				if( nextAst->type != AstExpr::Type::block )
-				{
-					generateNotification( NT::err_expectBlockAfterElse, currToken );
-					return nullptr;
-				}
-				newAst->elseCase = nextAst->as<AstBlock>();
-			}
-
-			blockStack.top()->content.push_back( newAst );//Add to ast
-
-			return newAst;
-		}
-		else if( token->type == TT::cf_else )
-		{//Else block. Just return a virtual ast.
-			auto newAst = std::make_shared<AstExpr>( AstExpr::Type::elseStat );
-			newAst->token = token;
-			return newAst;
-		}
-		else if( token->type == TT::cf_while )
-		{//Create a new while loop
-			std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
-			newAst->token = token;
-			newAst->isDoWhile = previousDo;
-			previousDo = false;
-
-			if( newAst->isDoWhile )
-			{//Is do-while
-				//Block
-				std::shared_ptr<AstBlock> block = blockStack.top()->content.back()->as<AstBlock>();
-				blockStack.top()->content.pop_back();
-				newAst->block = block;
-
-				//Condition
-				expectBool = true;
-				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
-				if( nextAst->type != AstExpr::Type::booleanParenthesis )
-				{
-					generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
-					return nullptr;
-				}
-				newAst->condition = nextAst->as<AstBooleanParenthesis>();
-				expectBool = false;
-				lValue = newAst;//To force semicolon.
 			}
 			else
-			{//Is normal while
+			{//Not global
+				std::shared_ptr<AstIf> newAst = std::make_shared<AstIf>();
+				newAst->token = token;
+
 				//Condition
 				expectBool = true;
 				std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
@@ -903,34 +855,252 @@ namespace nigel
 				expectBool = false;
 				lValue = nullptr;
 
-				//Block
+				//If case block
 				blockHasHead = true;
 				nextAst = resolveNextExpr();
 				if( nextAst->type != AstExpr::Type::block )
 				{
-					generateNotification( NT::err_expectBlockAfterWhile, currToken );
+					generateNotification( NT::err_expectBlockAfterIf, currToken );
 					return nullptr;
 				}
-				newAst->block = nextAst->as<AstBlock>();
+				newAst->ifCase = nextAst->as<AstBlock>();
+
+				//Else case block
+				blockHasHead = true;
+				nextAst = resolveNextExpr();
+				if( nextAst != nullptr && nextAst->type == AstExpr::Type::elseStat )
+				{
+					nextAst = resolveNextExpr();
+					if( nextAst->type != AstExpr::Type::block )
+					{
+						generateNotification( NT::err_expectBlockAfterElse, currToken );
+						return nullptr;
+					}
+					newAst->elseCase = nextAst->as<AstBlock>();
+				}
+
 				blockStack.top()->content.push_back( newAst );//Add to ast
+
+				return newAst;
 			}
+		}
+		else if( token->type == TT::cf_else )
+		{//Else block. Just return a virtual ast.
+			if( blockStack.size() <= 1 )
+			{//Is in global scope!
+				generateNotification( NT::err_operationsAreNotAllowedInGlobalScope, token );
+				ignoreExpr();
+				return nullptr;
+			}
+			else
+			{//Not global
+				auto newAst = std::make_shared<AstExpr>( AstExpr::Type::elseStat );
+				newAst->token = token;
+				return newAst;
+			}
+		}
+		else if( token->type == TT::cf_while )
+		{//Create a new while loop
+			if( blockStack.size() <= 1 )
+			{//Is in global scope!
+				generateNotification( NT::err_operationsAreNotAllowedInGlobalScope, token );
+				ignoreExpr();
+				return nullptr;
+			}
+			else
+			{//Not global
+				std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
+				newAst->token = token;
+				newAst->isDoWhile = previousDo;
+				previousDo = false;
 
+				if( newAst->isDoWhile )
+				{//Is do-while
+					//Block
+					std::shared_ptr<AstBlock> block = blockStack.top()->content.back()->as<AstBlock>();
+					blockStack.top()->content.pop_back();
+					newAst->block = block;
 
-			return newAst;
+					//Condition
+					expectBool = true;
+					std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+					if( nextAst->type != AstExpr::Type::booleanParenthesis )
+					{
+						generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+						return nullptr;
+					}
+					newAst->condition = nextAst->as<AstBooleanParenthesis>();
+					expectBool = false;
+					lValue = newAst;//To force semicolon.
+				}
+				else
+				{//Is normal while
+					//Condition
+					expectBool = true;
+					std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+					if( nextAst->type != AstExpr::Type::booleanParenthesis )
+					{
+						generateNotification( NT::err_expectedIdentifierAfterOperator, currToken );
+						return nullptr;
+					}
+					newAst->condition = nextAst->as<AstBooleanParenthesis>();
+					expectBool = false;
+					lValue = nullptr;
+
+					//Block
+					blockHasHead = true;
+					nextAst = resolveNextExpr();
+					if( nextAst->type != AstExpr::Type::block )
+					{
+						generateNotification( NT::err_expectBlockAfterWhile, currToken );
+						return nullptr;
+					}
+					newAst->block = nextAst->as<AstBlock>();
+					blockStack.top()->content.push_back( newAst );//Add to ast
+				}
+
+				return newAst;
+			}
 		}
 		else if( token->type == TT::cf_do )
 		{//Create a new do while loop
-			std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
-			newAst->token = token;
-			previousDo = true;
-			return newAst;
+			if( blockStack.size() <= 1 )
+			{//Is in global scope!
+				generateNotification( NT::err_operationsAreNotAllowedInGlobalScope, token );
+				ignoreExpr();
+				return nullptr;
+			}
+			else
+			{//Not global
+				std::shared_ptr<AstWhile> newAst = std::make_shared<AstWhile>();
+				newAst->token = token;
+				previousDo = true;
+				return newAst;
+			}
 		}
 		else if( token->type == TT::cf_break )
 		{//Else block. Just return a virtual ast.
-			auto newAst = std::make_shared<AstExpr>( AstExpr::Type::breakStat );
-			newAst->token = token;
-			blockStack.top()->content.push_back( newAst );//Add to ast
-			return newAst;
+			if( blockStack.size() <= 1 )
+			{//Is in global scope!
+				generateNotification( NT::err_operationsAreNotAllowedInGlobalScope, token );
+				ignoreExpr();
+				return nullptr;
+			}
+			else
+			{//Not global
+				auto newAst = std::make_shared<AstExpr>( AstExpr::Type::breakStat );
+				newAst->token = token;
+				blockStack.top()->content.push_back( newAst );//Add to ast
+				return newAst;
+			}
+		}
+		else if( token->type == TT::function )
+		{//Function deklation/definition
+			if( blockStack.size() > 1 )
+			{//Is in local scope!
+				generateNotification( NT::err_functionDefinitionsAreNotAllowedInLocalScope, token );
+				ignoreExpr();
+				return nullptr;
+			}
+			else
+			{//Global scope
+				std::shared_ptr<AstFunction> newAst = std::make_shared<AstFunction>();
+				newAst->token = token;
+
+
+				if( lValue != nullptr )
+				{//Check if has lValue
+					generateNotification( NT::err_unexpectedReturningBeforeFunctionDeklaration, currToken );
+					ignoreExpr();
+					return nullptr;
+				}
+
+				auto retType = next();
+				if( retType->type == TT::type_byte ) newAst->retType = BasicType::tByte;
+				else if( retType->type == TT::type_int ) newAst->retType = BasicType::tInt;
+				else
+				{
+					generateNotification( NT::err_unknownTypeAtFunction, retType );
+					ignoreExpr();
+					return nullptr;
+				}
+
+				auto funcName = next();
+				if( funcName->type != TT::identifier )
+				{
+					generateNotification( NT::err_expectedIdentifier_atFunction, funcName );
+					ignoreExpr();
+					return nullptr;
+				}
+				newAst->symbol += funcName->as<Token_Identifier>()->identifier;
+
+				if( next()->type != TT::tok_parenthesis_open )
+				{
+					generateNotification( NT::err_expectedOpeningParenthesis_atFunction, funcName );
+					ignoreExpr();
+					return nullptr;
+				}
+				bool loopParameterList = true;
+				while( loopParameterList )
+				{
+					auto typeToken = next();
+					BasicType tmpType;
+					if( typeToken->type == TT::type_byte ) tmpType = BasicType::tByte;
+					else if( typeToken->type == TT::type_int ) tmpType = BasicType::tInt;
+					else if( typeToken->type == TT::tok_parenthesis_close )
+					{
+						loopParameterList = false;
+						break;
+					}
+					else
+					{
+						generateNotification( NT::err_unknownTypeAtFunctionParameter, typeToken );
+						ignoreExpr();
+						return nullptr;
+					}
+					auto tmpName = next();
+					if( tmpName->type != TT::identifier )
+					{
+						generateNotification( NT::err_expectedIdentifier_atFunction, tmpName );
+						ignoreExpr();
+						return nullptr;
+					}
+
+					auto var = std::make_shared<AstVariable>();
+					var->model = MemModel::param;
+					var->name = tmpName->as<Token_Identifier>()->identifier;
+					var->retType = tmpType;
+					var->token = tmpName;
+					newAst->parameters.push_back( std::pair<String, std::shared_ptr<AstVariable>>( var->name, var ) );
+
+					newAst->symbol += "@" + var->name + "@" + var->returnTypeString();
+
+					auto last = next();
+					if( last->type == TT::tok_comma ) loopParameterList = true;
+					else if( last->type == TT::tok_parenthesis_close ) loopParameterList = false;
+					else
+					{
+						generateNotification( NT::err_unknownTokenAfterFunctionParameter, last );
+						ignoreExpr();
+						return nullptr;
+					}
+				}
+
+				functionParameters = newAst->parameters;
+				blockHasHead = true;
+
+				auto nextAst = resolveNextExpr();
+				if( nextAst->type != AstExpr::Type::block )
+				{
+					generateNotification( NT::err_expectedBlockAfterFunctionHead, nextAst->token );
+				}
+				newAst->content = nextAst->as<AstBlock>();
+
+				functionParameters.clear();
+				blockStack.top()->content.push_back( newAst );//Add to ast
+
+				return newAst;
+			}
 		}
 		else if( token->type == TT::tok_semicolon )
 		{//End of expression
