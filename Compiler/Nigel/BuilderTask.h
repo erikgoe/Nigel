@@ -55,7 +55,7 @@ namespace nigel
 
 		std::map<NT, String> notificationTexts;
 
-		void printErrorLog( std::list<std::shared_ptr<CompileNotification>> notificationList );
+		void printErrorLog( std::list<std::shared_ptr<CompileNotification>> notificationList, std::chrono::time_point<std::chrono::system_clock> startTime );
 
 	public:
 		BuilderTask( String name, String description, String helpText, std::list<std::shared_ptr<BuilderExecutable>> executables );

@@ -3,11 +3,14 @@
 
 namespace nigel
 {
-	void BuilderTask::printErrorLog( std::list<std::shared_ptr<CompileNotification>> notificationList )
+	void BuilderTask::printErrorLog( std::list<std::shared_ptr<CompileNotification>> notificationList, std::chrono::time_point<std::chrono::system_clock> startTime )
 	{
 		size_t errorCount = 0, warningCount = 0, notificationCount = 0;
 		String outStr = "";
 		LogLevel level = LogLevel::Information;
+
+		std::chrono::time_point<std::chrono::system_clock> endTime = std::chrono::system_clock::now();
+		std::chrono::duration<double> duration = ( endTime - startTime );
 
 		for( auto &n : notificationList )
 		{
@@ -60,12 +63,13 @@ namespace nigel
 		}
 		if( errorCount > 0 )
 		{
-			log( "FAILED " + to_string( errorCount ) + ( errorCount>1 ? " ERRORS" : " ERROR" ) + " OCCURRED! " + to_string( warningCount ) + " warnings occurred. " + to_string( notificationCount ) + " improvements available." );
+			log( "FAILED " + to_string( errorCount ) + ( errorCount > 1 ? " ERRORS" : " ERROR" ) + " OCCURRED! " + to_string( warningCount ) + " warnings occurred. " + to_string( notificationCount ) + " improvements available. Took " + to_string( duration.count() ) + " second" );
 		}
 		else if( warningCount > 0 || notificationCount > 0 )
 		{
-			log( "Finshed with " + to_string( errorCount ) + " errors, " + to_string( warningCount ) + ( warningCount == 1 ? " warning" : " warnings" ) + " and " + to_string( notificationCount ) + ( warningCount == 1 ? " improvement" : " improvements" ) + "." );
+			log( "Finshed with " + to_string( errorCount ) + " errors, " + to_string( warningCount ) + ( warningCount == 1 ? " warning" : " warnings" ) + " and " + to_string( notificationCount ) + ( warningCount == 1 ? " improvement" : " improvements" ) + " in " + to_string( duration.count() ) + " seconds." );
 		}
+		else log( "Successfully finished in " + to_string( duration.count() ) + " seconds. " );
 	}
 	BuilderTask::BuilderTask( String name, String description, String helpText, std::list<std::shared_ptr<BuilderExecutable>> executables )
 	{
@@ -186,6 +190,7 @@ namespace nigel
 	ExecutionResult BuilderTask::execute( std::map<String, std::list<String>> parameters, std::set<char> flags )
 	{
 		CodeBase codeBase;
+		auto startTime = std::chrono::system_clock::now();
 
 		if( parameters.find( "c" ) != parameters.end() ) codeBase.srcFile = std::make_shared<fs::path>( parameters["c"].front() );
 		if( parameters.find( "o" ) != parameters.end() ) codeBase.destFile = std::make_shared<fs::path>( parameters["o"].front() );
@@ -214,7 +219,7 @@ namespace nigel
 			}
 		}
 
-		printErrorLog( notificationList );
+		printErrorLog( notificationList, startTime );
 		return executionResult;
 	}
 	void BuilderExecutable::generateNotification( NT error, std::shared_ptr<fs::path> path )
