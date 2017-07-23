@@ -38,7 +38,7 @@ namespace nigel
 	private:
 		CodeBase *base;
 		std::stack<u32> breakableIDs;//Stack of breakable blocks.
-		std::stack<u32> funcIDs;//Stack of function bocks.
+		std::stack<u32> funcIDs;//Stack of functions.
 		String currSymbol;//Symbol of the current function
 
 		//Converts a binary operation to an unary operation.
@@ -52,6 +52,11 @@ namespace nigel
 
 		//Writes the EIR into the console.
 		void printEIR( CodeBase &base );
+
+		//Writes the EIR as assembly into the console.
+		void printAssembly( CodeBase &base );
+		//Extracts a string from a operator
+		String operatorToString( std::shared_ptr<EIR_Operator> op );
 
 	public:
 

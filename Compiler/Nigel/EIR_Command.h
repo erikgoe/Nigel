@@ -11,6 +11,7 @@ namespace nigel
 		nop = 0x00,
 
 		clr_a = 0xE4,
+		clr_c = 0xC3,
 
 		mov_a_const = 0x74,
 		mov_a_adr = 0xE5,
@@ -44,8 +45,6 @@ namespace nigel
 		xch_atr0_a = 0xD6,
 		xch_a_adr = 0xC5,
 		xch_adr_a = 0xC5,
-
-		clr_c = 0xC3,
 
 		add_a_const = 0x24,
 		add_a_adr = 0x25,
@@ -195,20 +194,36 @@ namespace nigel
 	{
 	public:
 		u32 blockID = 0;
-		bool begin = true;//Otherwise to the end.
+		String symbol;
+		bool begin = false;//Otherwise to the end.
+		bool finish = false;//If is with stack destruction
 
 		static std::shared_ptr<EIR_Block> getBlockBegin( u32 id )
 		{
-			return std::make_shared<EIR_Block>( id, true );
+			return std::make_shared<EIR_Block>( id, true, false );
+		}
+		static std::shared_ptr<EIR_Block> getBlockBegin( String symbol )
+		{
+			return std::make_shared<EIR_Block>( symbol, true );
 		}
 
 		static std::shared_ptr<EIR_Block> getBlockEnd( u32 id )
 		{
-			return std::make_shared<EIR_Block>( id, false );
+			return std::make_shared<EIR_Block>( id, false, false );
 		}
-		EIR_Block( u32 blockID, bool begin ) : EIR_Operator( EIR_Operator::Type::block )
+		static std::shared_ptr<EIR_Block> getBlockFinish( u32 id )
+		{
+			return std::make_shared<EIR_Block>( id, false, true );
+		}
+		EIR_Block( u32 blockID, bool begin, bool finish ) : EIR_Operator( EIR_Operator::Type::block )
 		{
 			this->blockID = blockID;
+			this->begin = begin;
+			this->finish = finish;
+		}
+		EIR_Block( String symbol, bool begin ) : EIR_Operator( EIR_Operator::Type::block )
+		{
+			this->symbol = symbol;
 			this->begin = begin;
 		}
 	};
@@ -250,6 +265,7 @@ namespace nigel
 			operation,
 			blockBegin,
 			blockEnd,
+			blockFinish,
 			conditionEnd,
 		} type = Type::operation;
 
@@ -257,7 +273,7 @@ namespace nigel
 		std::shared_ptr<EIR_Operator> op1 = nullptr;//First operator
 		std::shared_ptr<EIR_Operator> op2 = nullptr;//Second operator
 
-		u32 id = 0;//Is used in case of blockBegin || blockEnd.
+		u32 id = 0;//Is used in case of blockBegin | blockEnd | conditionEnd.
 		String symbol;//If the block has a symbol (in case of a function)
 
 		EIR_Command() {}

@@ -1,7 +1,19 @@
 byte a;
+byte b;
 
+fn byte faculty()
+{
+	if( b != 0 )
+	{
+		a *= b;
+		b--;
+		faculty();
+	}
+}
 fn byte main()
 {
-	byte b = 11;
-	a = b;
+	a = 1;
+	b = 5;
+	
+	faculty();
 }

@@ -52,8 +52,9 @@ namespace nigel
 		}
 	};
 
-	//Class deklaration
+	//Class deklarations
 	class AstVariable;
+	class AstFunction;
 
 	using VariableBinding = std::pair<String, std::shared_ptr<AstVariable>>;
 
@@ -290,6 +291,24 @@ namespace nigel
 		AstFunction() : AstExpr( AstExpr::Type::functionDefinition ) {}
 	};
 
+		//A function call
+	class AstFunctionCall : public AstReturning
+	{
+	public:
+		String symbol;
+		std::list<VariableBinding> parameters;
+
+		AstFunctionCall() : AstReturning( AstExpr::Type::functionCall ) {}
+	};
+
+		//Return statement
+	class AstReturnStatement : public AstExpr
+	{
+	public:
+		std::shared_ptr<AstReturning> expr;
+
+		AstReturnStatement() : AstExpr( AstExpr::Type::returnStat ) {}
+	};
 }
 
 #endif // !NIGEL_AST_EXPR_H

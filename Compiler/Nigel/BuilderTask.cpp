@@ -13,7 +13,7 @@ namespace nigel
 		{
 			outStr = n->file->generic_string() + "(";
 			if( n->token != nullptr ) outStr += to_string( n->token->lineNo ) + ", " + to_string( n->token->columnNo );
-			else if( n->lineText != nullptr ) outStr += to_string( n->line );
+			else if( n->line != -1 ) outStr += to_string( n->line );
 			outStr += "): ";
 
 			if( n->type > NT::begin_err && n->type < NT::begin_warning )
@@ -50,9 +50,10 @@ namespace nigel
 
 				for( size_t i = 1 ; i < pos ; i++ ) outStr += ' ';
 
-				if( n->token->toString() == "-!-UNKNOWN-!-" ||
-					n->token->toString() == "_!EOF!_" ) outStr += '^';
-				else for( size_t i = 0 ; i < n->token->toString().size() ; i++ ) outStr += '^';
+				outStr += '^';
+				if( n->token->toString() != "-!-UNKNOWN-!-" &&
+					n->token->toString() != "_!EOF!_" ) 
+					for( size_t i = 1 ; i < n->token->toString().size() ; i++ ) outStr += '~';
 			}
 
 			log( outStr, level );
@@ -96,7 +97,7 @@ namespace nigel
 		notificationTexts[NT::err_expectedEqlSign_atAllocation] = "Expected '=' at allocation.";
 		notificationTexts[NT::err_expectedKnownLiteral] = "Expected known literal.";
 		notificationTexts[NT::err_variableAlreadyDefined] = "The variable identifier is already defined.";
-		notificationTexts[NT::err_undefinedIdentifier] = "The identifiern is not defined.";
+		notificationTexts[NT::err_undefinedIdentifier] = "This identifier is not defined.";
 		notificationTexts[NT::err_noAllocationAfterVariableAttribute] = "Expected allocation after attribute keyword.";
 
 		notificationTexts[NT::err_unexpectedReturningBeforeByteKeyword] = "Unexpected returnable before byte keyword.";
@@ -152,6 +153,13 @@ namespace nigel
 		notificationTexts[NT::err_unknownTypeAtFunctionParameter] = "Unknown type at function parameter.";
 		notificationTexts[NT::err_unknownTokenAfterFunctionParameter] = "Unknown token after function parameter.";
 		notificationTexts[NT::err_expectedBlockAfterFunctionHead] = "Expected block after function head.";
+		notificationTexts[NT::err_functionIdentifierAlreadyAssigned] = "This identifier was already assigned.";
+		notificationTexts[NT::err_expectedIdentifier_atFunctionCall] = "Expected identifier at function call.";
+		notificationTexts[NT::err_expectedOpeningParenthesis_atFunctionCall] = "Expected opening parenthesis at function call.";
+		notificationTexts[NT::err_unknownTypeAtFunctionCallParameter] = "Unknown type at function call parameter.";
+		notificationTexts[NT::err_unknownTokenAfterFunctionCallParameter] = "Unknown token after function call parameter.";
+		notificationTexts[NT::err_expectedReturningExpression_AtReturn] = "Expected retunable at return statement.";
+		notificationTexts[NT::err_returnHasToBeInTheOuterScope] = "The return statement has to be in the outer scope of a function.";
 
 		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
 		notificationTexts[NT::err_cannotBreakAtThisPosition] = "Can't break out of this or outer scope.";
@@ -190,6 +198,7 @@ namespace nigel
 		if( parameters.find( "pl" ) != parameters.end() ) codeBase.printLexer = true;
 		if( parameters.find( "pa" ) != parameters.end() ) codeBase.printAST = true;
 		if( parameters.find( "pe" ) != parameters.end() ) codeBase.printEIR = true;
+		if( parameters.find( "pasm" ) != parameters.end() ) codeBase.printAssembly = true;
 
 		std::list<std::shared_ptr<CompileNotification>> notificationList;
 		ExecutionResult executionResult = ExecutionResult::success;

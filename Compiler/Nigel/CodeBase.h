@@ -20,6 +20,7 @@ namespace nigel
 		bool printLexer = false;
 		bool printAST = false;
 		bool printEIR = false;
+		bool printAssembly = false;
 
 		//Generated data
 		class LineContent

@@ -24,6 +24,7 @@ namespace nigel
 		bool blockHasHead = false;//If the following block has a head. E. g. a if block.
 		bool previousDo = false;//If the previous was the do keyword.
 		std::list<VariableBinding> functionParameters;//List of parameters (to extend the local variables)
+		std::map<String, std::shared_ptr<AstFunction>> functions;//All available functions. Symbols mapped to thier deklarations.
 		size_t openParenthesisCount = 0;
 		size_t openBraceCount = 0;
 
@@ -58,6 +59,8 @@ namespace nigel
 		std::shared_ptr<AstCondition> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstCombinationCondition> cExpr, int priority );
 		//Splits to the most right atomic expr with a same or higher priority from the lValue
 		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstComparisonCondition> cExpr, int priority );
+		//Splits to the most right atomic expr with a same or higher priority from the lValue
+		std::shared_ptr<AstReturning> splitMostRightExpr( std::shared_ptr<AstExpr> clVal, std::shared_ptr<AstFunctionCall> cExpr, int priority );
 
 	};
 }

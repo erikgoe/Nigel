@@ -10,8 +10,10 @@ namespace nigel
 	{
 		std::map<u32, u16> blockBeginAddresses;//Already created blocks. Id of a block mapped to the address in hexBuffer.
 		std::map<u32, u16> blockEndAddresses;//Already created blocks. Id of a block mapped to the address in hexBuffer.
+		std::map<u32, u16> blockFinishAddresses;//Already created blocks. Id of a block mapped to the address in hexBuffer.
 		std::map<u32, std::list<u16>> missingBeginBlocks;//These addresses should be overwritten, if the corresponding block was created.
 		std::map<u32, std::list<u16>> missingEndBlocks;//These addresses should be overwritten, if the corresponding block was created.
+		std::map<u32, std::list<u16>> missingFinishBlocks;//These addresses should be overwritten, if the corresponding block was created.
 		
 		std::map<u32, u16> conditionEnds_true;//Already created conditions. Id of a condition mapped to the address in hexBuffer.
 		std::map<u32, u16> conditionEnds_false;//Already created conditions. Id of a condition mapped to the address in hexBuffer.
@@ -104,30 +106,64 @@ namespace nigel
 						auto op = c->op1->as<EIR_Block>();
 						if( op->begin )
 						{//To block begin
-							if( blockBeginAddresses.find( op->blockID ) == blockBeginAddresses.end() )
-							{//Nothing found
-								missingBeginBlocks[op->blockID].push_back( static_cast<u16>( base.hexBuffer.size() ) );
-								base.hexBuffer.push_back( 0 );
-								base.hexBuffer.push_back( 0 );
+							if( op->symbol != "" )
+							{//Function-like
+								if( symbolAddresses.find( op->symbol ) == symbolAddresses.end() )
+								{//Nothing found
+									missingSymbols[op->symbol].push_back( static_cast< u16 >( base.hexBuffer.size() ) );
+									base.hexBuffer.push_back( 0 );
+									base.hexBuffer.push_back( 0 );
+								}
+								else
+								{//Block was already created.
+									base.hexBuffer.push_back( static_cast< u8 >( symbolAddresses[op->symbol] << 8 ) );
+									base.hexBuffer.push_back( static_cast< u8 >( symbolAddresses[op->symbol] ) );
+								}
 							}
 							else
-							{//Block was already created.
-								base.hexBuffer.push_back( static_cast< u8 >( blockBeginAddresses[op->blockID] << 8 ) );
-								base.hexBuffer.push_back( static_cast< u8 >( blockBeginAddresses[op->blockID] ) );
+							{//Scope-like
+								if( blockBeginAddresses.find( op->blockID ) == blockBeginAddresses.end() )
+								{//Nothing found
+									missingBeginBlocks[op->blockID].push_back( static_cast< u16 >( base.hexBuffer.size() ) );
+									base.hexBuffer.push_back( 0 );
+									base.hexBuffer.push_back( 0 );
+								}
+								else
+								{//Block was already created.
+									base.hexBuffer.push_back( static_cast< u8 >( blockBeginAddresses[op->blockID] << 8 ) );
+									base.hexBuffer.push_back( static_cast< u8 >( blockBeginAddresses[op->blockID] ) );
+								}
 							}
 						}
 						else
-						{//To block end
-							if( blockEndAddresses.find( op->blockID ) == blockEndAddresses.end() )
-							{//Nothing found
-								missingEndBlocks[op->blockID].push_back( static_cast<u16>( base.hexBuffer.size() ) );
-								base.hexBuffer.push_back( 0 );
-								base.hexBuffer.push_back( 0 );
+						{
+							if( op->finish )
+							{//Finish block
+								if( blockFinishAddresses.find( op->blockID ) == blockFinishAddresses.end() )
+								{//Nothing found
+									missingFinishBlocks[op->blockID].push_back( static_cast< u16 >( base.hexBuffer.size() ) );
+									base.hexBuffer.push_back( 0 );
+									base.hexBuffer.push_back( 0 );
+								}
+								else
+								{//Block was already created.
+									base.hexBuffer.push_back( static_cast< u8 >( blockFinishAddresses[op->blockID] << 8 ) );
+									base.hexBuffer.push_back( static_cast< u8 >( blockFinishAddresses[op->blockID] ) );
+								}
 							}
 							else
-							{//Block was already created.
-								base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] << 8 ) );
-								base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] ) );
+							{//To block end
+								if( blockEndAddresses.find( op->blockID ) == blockEndAddresses.end() )
+								{//Nothing found
+									missingEndBlocks[op->blockID].push_back( static_cast< u16 >( base.hexBuffer.size() ) );
+									base.hexBuffer.push_back( 0 );
+									base.hexBuffer.push_back( 0 );
+								}
+								else
+								{//Block was already created.
+									base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] << 8 ) );
+									base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] ) );
+								}
 							}
 						}
 					}
@@ -208,17 +244,34 @@ namespace nigel
 							}
 						}
 						else
-						{//To block end
-							if( blockEndAddresses.find( op->blockID ) == blockEndAddresses.end() )
-							{//Nothing found
-								missingEndBlocks[op->blockID].push_back( static_cast<u16>( base.hexBuffer.size() ) );
-								base.hexBuffer.push_back( 0 );
-								base.hexBuffer.push_back( 0 );
+						{
+							if( op->finish )
+							{//Finish block
+								if( blockFinishAddresses.find( op->blockID ) == blockFinishAddresses.end() )
+								{//Nothing found
+									missingFinishBlocks[op->blockID].push_back( static_cast< u16 >( base.hexBuffer.size() ) );
+									base.hexBuffer.push_back( 0 );
+									base.hexBuffer.push_back( 0 );
+								}
+								else
+								{//Block was already created.
+									base.hexBuffer.push_back( static_cast< u8 >( blockFinishAddresses[op->blockID] << 8 ) );
+									base.hexBuffer.push_back( static_cast< u8 >( blockFinishAddresses[op->blockID] ) );
+								}
 							}
 							else
-							{//Block was already created.
-								base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] << 8 ) );
-								base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] ) );
+							{//To block end
+								if( blockEndAddresses.find( op->blockID ) == blockEndAddresses.end() )
+								{//Nothing found
+									missingEndBlocks[op->blockID].push_back( static_cast< u16 >( base.hexBuffer.size() ) );
+									base.hexBuffer.push_back( 0 );
+									base.hexBuffer.push_back( 0 );
+								}
+								else
+								{//Block was already created.
+									base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] << 8 ) );
+									base.hexBuffer.push_back( static_cast< u8 >( blockEndAddresses[op->blockID] ) );
+								}
 							}
 						}
 					}
@@ -246,19 +299,22 @@ namespace nigel
 					missingBeginBlocks.erase( c->id );
 				}
 
-				if( symbolAddresses.find( c->symbol ) != symbolAddresses.end() )
-				{//Already defined symbol found
-					generateNotification( NT::err_symbolIsAlreadyDefined, std::make_shared<String>( c->symbol ), -1, base.srcFile );
-				}
-				symbolAddresses[c->symbol] = address;
-				if( missingSymbols.find( c->symbol ) != missingSymbols.end() )
+				if( c->symbol != "" )
 				{
-					for( auto &a : missingSymbols[c->symbol] )
-					{
-						base.hexBuffer[a] = static_cast< u8 >( address << 8 );
-						base.hexBuffer[a + 1] = static_cast< u8 >( address );
+					if( symbolAddresses.find( c->symbol ) != symbolAddresses.end() )
+					{//Already defined symbol found
+						generateNotification( NT::err_symbolIsAlreadyDefined, std::make_shared<String>( c->symbol ), -1, base.srcFile );
 					}
-					missingSymbols.erase( c->symbol );
+					symbolAddresses[c->symbol] = address;
+					if( missingSymbols.find( c->symbol ) != missingSymbols.end() )
+					{
+						for( auto &a : missingSymbols[c->symbol] )
+						{
+							base.hexBuffer[a] = static_cast< u8 >( address << 8 );
+							base.hexBuffer[a + 1] = static_cast< u8 >( address );
+						}
+						missingSymbols.erase( c->symbol );
+					}
 				}
 
 
@@ -373,6 +429,20 @@ namespace nigel
 					missingEndBlocks.erase( c->id );
 				}
 			}
+			else if( c->type == EIR_Command::Type::blockFinish )
+			{//Finish the block
+				u16 address = static_cast<u16>( base.hexBuffer.size() );
+				blockFinishAddresses[c->id] = address;
+				if( missingFinishBlocks.find( c->id ) != missingFinishBlocks.end() )
+				{
+					for( auto &a : missingFinishBlocks[c->id] )
+					{
+						base.hexBuffer[a] = static_cast< u8 >( address << 8 );
+						base.hexBuffer[a + 1] = static_cast< u8 >( address );
+					}
+					missingFinishBlocks.erase( c->id );
+				}
+			}
 			else if( c->type == EIR_Command::Type::conditionEnd )
 			{//End of a condition
 				u16 address = static_cast<u16>( base.hexBuffer.size() );
@@ -398,7 +468,7 @@ namespace nigel
 
 
 		//Error reporting
-		if( !missingBeginBlocks.empty() || !missingEndBlocks.empty() )
+		if( !missingBeginBlocks.empty() || !missingEndBlocks.empty() || !missingFinishBlocks.empty() )
 		{
 			generateNotification( NT::err_internal_blockNotFound, base.srcFile );
 		}

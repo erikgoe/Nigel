@@ -70,7 +70,8 @@ namespace nigel
 					else if( c->op1->type == EIR_Operator::Type::block )
 					{
 						std::shared_ptr<EIR_Block> var = c->op1->as<EIR_Block>();
-						out += "B" + int_to_hex( var->blockID ) + ( var->begin ? "B" : "E" );
+						if( var->symbol != "" ) out += "B::" + var->symbol;
+						else out += "B" + int_to_hex( var->blockID ) + ( var->begin ? "B" : "E" );
 					}
 					else if( c->op1->type == EIR_Operator::Type::condition )
 					{
@@ -99,7 +100,8 @@ namespace nigel
 						else if( c->op2->type == EIR_Operator::Type::block )
 						{
 							std::shared_ptr<EIR_Block> var = c->op1->as<EIR_Block>();
-							out += "B" + int_to_hex( var->blockID ) + ( var->begin ? "B" : "E" );
+							if( var->symbol != "" ) out += "B::" + var->symbol;
+							else out += "B" + int_to_hex( var->blockID ) + ( var->begin ? "B" : "E" );
 						}
 						else if( c->op2->type == EIR_Operator::Type::condition )
 						{
@@ -111,11 +113,17 @@ namespace nigel
 			}
 			else if( c->type == EIR_Command::Type::blockBegin )
 			{
-				out = " :blockB, " + int_to_hex( c->id );
+				if( c->symbol != "" ) out = " :blockB, " + c->symbol + ", ";
+				else out = " :blockB, ";
+				out += int_to_hex( c->id );
 			}
 			else if( c->type == EIR_Command::Type::blockEnd )
 			{
 				out = " :blockE, " + int_to_hex( c->id );
+			}
+			else if( c->type == EIR_Command::Type::blockFinish )
+			{
+				out = " :blockF, " + int_to_hex( c->id );
 			}
 			else if( c->type == EIR_Command::Type::conditionEnd )
 			{
@@ -125,6 +133,148 @@ namespace nigel
 		}
 
 		log( "EIR end" );
+	}
+
+	void EIR_Parser::printAssembly( CodeBase & base )
+	{
+		log( "__ASM__" );
+
+		String tabs = "";
+
+		for( auto c : base.eirCommands )
+		{//Print all commands
+			String out = tabs;
+			if( c->type == EIR_Command::Type::operation )
+			{
+				if( c->operation == HexOp::nop )					out += "NOP";
+
+				else if( c->operation == HexOp::clr_a )				out += "CLR A";
+				else if( c->operation == HexOp::clr_c )				out += "CLR C";
+
+				else if( c->operation == HexOp::mov_a_const )		out += "MOV A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_a_adr )			out += "MOV A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_a_r0 )			out += "MOV A, R0";
+				else if( c->operation == HexOp::mov_a_atr0 )		out += "MOV A, @R0";
+				else if( c->operation == HexOp::mov_a_atr1 )		out += "MOV A, @R1";
+				else if( c->operation == HexOp::mov_adr_const )		out += "MOV " + operatorToString( c->op1 ) + ", " + operatorToString( c->op2 );
+				else if( c->operation == HexOp::mov_adr_a )			out += "MOV " + operatorToString( c->op1 ) + ", A";
+				else if( c->operation == HexOp::mov_adr_r0 )		out += "MOV " + operatorToString( c->op1 ) + ", R0";
+				else if( c->operation == HexOp::mov_adr_atr0 )		out += "MOV " + operatorToString( c->op1 ) + ", @R0";
+				else if( c->operation == HexOp::mov_adr_adr )		out += "MOV " + operatorToString( c->op1 ) + ", " + operatorToString( c->op2 ) + " ; r into l";
+				else if( c->operation == HexOp::mov_r0_const )		out += "MOV R0, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_r0_a )			out += "MOV R0, A";
+				else if( c->operation == HexOp::mov_r0_adr )		out += "MOV R0, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_atr0_const )	out += "MOV @R0, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_atr0_a )		out += "MOV @R0, A";
+				else if( c->operation == HexOp::mov_atr1_a )		out += "MOV @R1, A";
+				else if( c->operation == HexOp::mov_atr0_adr )		out += "MOV @R0, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_dptr_const )	out += "MOV DPTR, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::movx_a_dptr )		out += "MOVX A, @DPTR";
+				else if( c->operation == HexOp::movx_dptr_a )		out += "MOVX @DPTR, A";
+
+				else if( c->operation == HexOp::push_adr )			out += "PUSH " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::pop_adr )			out += "POP " + operatorToString( c->op1 );
+
+				else if( c->operation == HexOp::xch_a_r0 )			out += "XCH A, R0";
+				else if( c->operation == HexOp::xch_r0_a )			out += "XCH R0, A";
+				else if( c->operation == HexOp::xch_a_r1 )			out += "XCH A, R1";
+				else if( c->operation == HexOp::xch_r1_a )			out += "XCH R1, A";
+				else if( c->operation == HexOp::xch_a_atr0 )		out += "XCH A, @R0";
+				else if( c->operation == HexOp::xch_atr0_a )		out += "XCH @R0, A";
+				else if( c->operation == HexOp::xch_a_adr )			out += "XCH A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::xch_adr_a )			out += "XCH " + operatorToString( c->op1 ) + ", A";
+
+				else if( c->operation == HexOp::add_a_const )		out += "ADD A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::add_a_adr )			out += "ADD A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::add_a_r0 )			out += "ADD A, R0";
+				else if( c->operation == HexOp::add_a_atr0 )		out += "ADD A, @R0";
+				else if( c->operation == HexOp::sub_a_const )		out += "SUBB A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::sub_a_adr )			out += "SUBB A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::sub_a_r0 )			out += "SUBB A, R0";
+				else if( c->operation == HexOp::sub_a_atr0 )		out += "SUBB A, @R0";
+				else if( c->operation == HexOp::mul_a_b )			out += "MUL AB";
+				else if( c->operation == HexOp::div_a_b )			out += "DIV AB";
+
+				else if( c->operation == HexOp::inc_a )				out += "INC A";
+				else if( c->operation == HexOp::dec_a )				out += "DEC A";
+				else if( c->operation == HexOp::rr_a )				out += "RR A";
+				else if( c->operation == HexOp::rl_a )				out += "RL A";
+
+				else if( c->operation == HexOp::and_a_const )		out += "ANL A, #" + operatorToString( c->op1 );
+				else if( c->operation == HexOp::and_a_adr )			out += "ANL A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::and_a_atr0 )		out += "ANL A, @R0";
+				else if( c->operation == HexOp::or_a_const )		out += "ORL A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::or_a_adr )			out += "ORL A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::or_a_atr0 )			out += "ORL A, @R0";
+				else if( c->operation == HexOp::xor_a_const )		out += "XRL A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::xor_a_adr )			out += "XRL A, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::xor_a_atr0 )		out += "XRL A, @R0";
+
+				else if( c->operation == HexOp::cpl_a )				out += "CPL A";
+
+				else if( c->operation == HexOp::cpl_bit )			out += "CPL " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::clr_bit )			out += "CLR " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::set_bit )			out += "SETB " + operatorToString( c->op1 );
+
+				else if( c->operation == HexOp::jmp_abs )			out += "LJMP " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::jmp_rel )			out += "SJMP " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::jmp_c_rel )			out += "JC " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::jmp_nc_rel )		out += "JNC " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::jmp_z_rel )			out += "JZ " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::jmp_nz_rel )		out += "JNZ " + operatorToString( c->op1 );
+
+				else if( c->operation == HexOp::call_abs )			out += "LCALL " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::ret )				out += "RET";
+				else if( c->operation == HexOp::reti )				out += "RETI";
+
+				else if( c->operation == HexOp::reti )				out += "-!-UNKNOWN_COMMAND-!-";
+			}
+			else if( c->type == EIR_Command::Type::blockBegin )
+			{
+				if( c->symbol != "" ) out += c->symbol + ", ";
+				out += "begin" + to_string( c->id ) + ":";
+				tabs += '\t';
+			}
+			else if( c->type == EIR_Command::Type::blockEnd )
+			{
+				out += "end" + to_string( c->id ) + ":";
+				tabs.pop_back();
+			}
+			else if( c->type == EIR_Command::Type::blockFinish )
+			{
+				out += "finish" + to_string( c->id ) + ":";
+			}
+			else if( c->type == EIR_Command::Type::conditionEnd )
+			{
+				out += "true" + to_string( c->id ) + ":";
+			}
+
+			log( out );
+		}
+
+		log( "__END__" );
+	}
+
+	String EIR_Parser::operatorToString( std::shared_ptr<EIR_Operator> op )
+	{
+		if( op->type == EIR_Operator::Type::constant ) return "#" + int_to_hex( op->as<EIR_Constant>()->data );
+		else if( op->type == EIR_Operator::Type::variable ) return "v" + to_string( op->as<EIR_Variable>()->id );
+		else if( op->type == EIR_Operator::Type::sfr )
+		{
+			if( op->as<EIR_SFR>()->address == static_cast< u8 >( EIR_SFR::SFR::A ) ) return "A";
+			else if( op->as<EIR_SFR>()->address == static_cast< u8 >( EIR_SFR::SFR::B ) ) return "B";
+			else if( op->as<EIR_SFR>()->address == static_cast< u8 >( EIR_SFR::SFR::SP ) ) return "SP";
+			else if( op->as<EIR_SFR>()->address == static_cast< u8 >( EIR_SFR::SFR::BR ) ) return "BR";
+			else return "-!-UNKNOWN_SFR-!-";
+		}
+		else if( op->type == EIR_Operator::Type::block )
+		{
+			if( op->as<EIR_Block>()->symbol != "" ) return op->as<EIR_Block>()->symbol;
+			else return ( op->as<EIR_Block>()->begin ? "begin" : "end" ) + to_string( op->as<EIR_Block>()->blockID );
+		}
+		else if( op->type == EIR_Operator::Type::condition )
+			return ( op->as<EIR_Condition>()->isTrue ? "true" : "false" ) + to_string( op->as<EIR_Condition>()->conditionID );
+		else return "-!-UNKNOWN-!-";
 	}
 
 
@@ -156,6 +306,7 @@ namespace nigel
 
 
 		if( base.printEIR ) printEIR( base );
+		if( base.printAssembly ) printAssembly( base );
 
 		if( hasError ) return ExecutionResult::eirParsingFailed;
 		else return ExecutionResult::success;
@@ -183,15 +334,21 @@ namespace nigel
 				stackInc += sizeOfType( v.second->retType ) / 8;
 			}
 
+			bool isBlock = true;
 			{//Add begin of block
 				auto blockBegin = std::make_shared<EIR_Command>();
 				blockBegin->type = EIR_Command::Type::blockBegin;
 				blockBegin->id = a->id;
 				blockBegin->symbol = currSymbol;
-				currSymbol = "";
 				base->eirCommands.push_back( blockBegin );
 
-				breakableIDs.push( a->id );
+				if( currSymbol == "" ) breakableIDs.push( a->id );
+				else
+				{
+					funcIDs.push( a->id );
+					isBlock = false;
+				}
+				currSymbol = "";
 			}
 
 			//Increment SP
@@ -206,11 +363,22 @@ namespace nigel
 				parseAst( a, localVarList );
 			}
 
+
+			{//Add finish of block
+				auto blockFinish = std::make_shared<EIR_Command>();;
+				blockFinish->type = EIR_Command::Type::blockFinish;
+				blockFinish->id = a->id;
+				base->eirCommands.push_back( blockFinish );
+			}
+
 			//Decrement SP
 			addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
 			addCmd( HexOp::add_a_const, EIR_Constant::fromConstant( ~stackInc + 1 ) );
 			addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SP ) );
 			addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::BR ) );
+
+			//Move return value from r0 into a
+			if( !isBlock ) addCmd( HexOp::xch_r0_a );
 
 			{//Add end of block
 				auto blockEnd = std::make_shared<EIR_Command>();;
@@ -218,8 +386,10 @@ namespace nigel
 				blockEnd->id = a->id;
 				base->eirCommands.push_back( blockEnd );
 
-				breakableIDs.pop();
+				if( isBlock ) breakableIDs.pop();
+				else funcIDs.pop();
 			}
+
 
 		}
 		else if( ast->type == AstExpr::Type::term )
@@ -235,12 +405,14 @@ namespace nigel
 			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
 			else if( a->rVal->type == AstExpr::Type::term ||
 					 a->rVal->type == AstExpr::Type::unary ||
-					 a->rVal->type == AstExpr::Type::parenthesis )
+					 a->rVal->type == AstExpr::Type::parenthesis ||
+					 a->rVal->type == AstExpr::Type::functionCall )
 			{
 				parseAst( a->rVal, varList );
 				if( a->lVal->type == AstExpr::Type::term ||
 					a->lVal->type == AstExpr::Type::unary ||
-					a->lVal->type == AstExpr::Type::parenthesis )//push to stack if OC::tt
+					a->lVal->type == AstExpr::Type::parenthesis ||
+					a->lVal->type == AstExpr::Type::functionCall )//push to stack if OC::tt
 					addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::A ) );
 				else addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
@@ -252,7 +424,8 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::vc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
-						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::vt;
+						 a->rVal->type == AstExpr::Type::parenthesis ||
+						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::vt;
 			}
 			else if( a->lVal->type == AstExpr::Type::literal )
 			{//lValue is a constant
@@ -261,18 +434,21 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::cc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
-						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::ct;
+						 a->rVal->type == AstExpr::Type::parenthesis ||
+						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::ct;
 			}
 			else if( a->lVal->type == AstExpr::Type::term ||
 					 a->lVal->type == AstExpr::Type::unary ||
-					 a->lVal->type == AstExpr::Type::parenthesis )
+					 a->lVal->type == AstExpr::Type::parenthesis ||
+					 a->lVal->type == AstExpr::Type::functionCall )
 			{//lValue is a term
 				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
-						 a->rVal->type == AstExpr::Type::parenthesis )
+						 a->rVal->type == AstExpr::Type::parenthesis ||
+						 a->rVal->type == AstExpr::Type::functionCall )
 				{//pop from stack to B
 					comb = OC::tt;
 					addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
@@ -453,7 +629,10 @@ namespace nigel
 				ot = OT::c;
 				op = EIR_Constant::fromAstLiteral( a->val->as<AstLiteral>() );
 			}
-			else if( a->val->type == AstExpr::Type::term )
+			else if( a->val->type == AstExpr::Type::term ||
+					 a->val->type == AstExpr::Type::parenthesis ||
+					 a->val->type == AstExpr::Type::unary ||
+					 a->val->type == AstExpr::Type::functionCall )
 			{
 				ot = OT::t;
 				parseAst( a->val, varList );
@@ -518,7 +697,10 @@ namespace nigel
 				ot = OT::c;
 				op = EIR_Constant::fromAstLiteral( a->content->as<AstLiteral>() );
 			}
-			else if( a->content->type == AstExpr::Type::term )
+			else if( a->content->type == AstExpr::Type::term ||
+					 a->content->type == AstExpr::Type::parenthesis ||
+					 a->content->type == AstExpr::Type::unary ||
+					 a->content->type == AstExpr::Type::functionCall )
 			{
 				ot = OT::t;
 				parseAst( a->content, varList );
@@ -602,7 +784,7 @@ namespace nigel
 		{//Break statement
 			if( !breakableIDs.empty() )
 			{
-				addCmd( HexOp::jmp_abs, EIR_Block::getBlockEnd( breakableIDs.top() ) );
+				addCmd( HexOp::jmp_abs, EIR_Block::getBlockFinish( breakableIDs.top() ) );
 			}
 			else generateNotification( NT::err_cannotBreakAtThisPosition, ast->token );
 		}
@@ -614,6 +796,45 @@ namespace nigel
 			parseAst( a->content, varList );
 
 			addCmd( HexOp::ret );
+		}
+		else if( ast->type == AstExpr::Type::functionCall )
+		{//Calling a function
+			std::shared_ptr<AstFunctionCall> a = ast->as<AstFunctionCall>();
+
+			addCmd( HexOp::call_abs, EIR_Block::getBlockBegin( a->symbol ) );
+		}
+		else if( ast->type == AstExpr::Type::returnStat )
+		{//Return a value
+			std::shared_ptr<AstReturnStatement> a = ast->as<AstReturnStatement>();
+			OperationType ot;//Operator type combination
+			std::shared_ptr<EIR_Operator> op;
+
+			//Memorize val
+			if( a->expr->type == AstExpr::Type::variable )
+			{
+				ot = OT::v;
+				op = varList[a->expr->as<AstVariable>()->name];
+			}
+			else if( a->expr->type == AstExpr::Type::literal )
+			{
+				ot = OT::c;
+				op = EIR_Constant::fromAstLiteral( a->expr->as<AstLiteral>() );
+			}
+			else if( a->expr->type == AstExpr::Type::term ||
+					 a->expr->type == AstExpr::Type::parenthesis ||
+					 a->expr->type == AstExpr::Type::unary ||
+					 a->expr->type == AstExpr::Type::functionCall )
+			{
+				ot = OT::t;
+				parseAst( a->expr, varList );
+			}
+
+			if( !breakableIDs.empty() )
+				generateNotification( NT::err_returnHasToBeInTheOuterScope, ast->token );
+
+			generateMoveA( ot, op );
+			addCmd( HexOp::xch_r0_a );
+			addCmd( HexOp::jmp_abs, EIR_Block::getBlockFinish( funcIDs.top() ) );
 		}
 		else if( ast->type != AstExpr::Type::allocation &&
 				 ast->type == AstExpr::Type::variable &&
@@ -650,7 +871,10 @@ namespace nigel
 				ot = OT::c;
 				op = EIR_Constant::fromAstLiteral( ret->as<AstLiteral>() );
 			}
-			else if( ret->type == AstExpr::Type::term )
+			else if( ret->type == AstExpr::Type::term ||
+					 ret->type == AstExpr::Type::unary ||
+					 ret->type == AstExpr::Type::parenthesis ||
+					 ret->type == AstExpr::Type::functionCall )
 			{
 				ot = OT::t;
 				parseAst( ret, varList );
@@ -671,12 +895,14 @@ namespace nigel
 			else if( a->rVal->type == AstExpr::Type::literal ) rOp = EIR_Constant::fromAstLiteral( a->rVal->as<AstLiteral>() );
 			else if( a->rVal->type == AstExpr::Type::term ||
 					 a->rVal->type == AstExpr::Type::unary ||
-					 a->rVal->type == AstExpr::Type::parenthesis )
+					 a->rVal->type == AstExpr::Type::parenthesis ||
+					 a->rVal->type == AstExpr::Type::functionCall )
 			{
 				parseAst( a->rVal, varList );
 				if( a->lVal->type == AstExpr::Type::term ||
 					a->lVal->type == AstExpr::Type::unary ||
-					a->lVal->type == AstExpr::Type::parenthesis )//push to stack if OC::tt
+					a->lVal->type == AstExpr::Type::parenthesis ||
+					a->lVal->type == AstExpr::Type::functionCall )//push to stack if OC::tt
 					addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::A ) );
 				else addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
@@ -688,7 +914,8 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::vc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
-						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::vt;
+						 a->rVal->type == AstExpr::Type::parenthesis ||
+						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::vt;
 			}
 			else if( a->lVal->type == AstExpr::Type::literal )
 			{//lValue is a constant
@@ -697,18 +924,21 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::cc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
-						 a->rVal->type == AstExpr::Type::parenthesis ) comb = OC::ct;
+						 a->rVal->type == AstExpr::Type::parenthesis ||
+						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::ct;
 			}
 			else if( a->lVal->type == AstExpr::Type::term ||
 					 a->lVal->type == AstExpr::Type::unary ||
-					 a->lVal->type == AstExpr::Type::parenthesis )
+					 a->lVal->type == AstExpr::Type::parenthesis ||
+					 a->lVal->type == AstExpr::Type::functionCall )
 			{//lValue is a term
 				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
-						 a->rVal->type == AstExpr::Type::parenthesis )
+						 a->rVal->type == AstExpr::Type::parenthesis ||
+						 a->rVal->type == AstExpr::Type::functionCall )
 				{//pop from stack to B
 					comb = OC::tt;
 					addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );

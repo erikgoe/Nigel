@@ -93,6 +93,13 @@ namespace nigel
 			err_unknownTypeAtFunctionParameter,
 			err_unknownTokenAfterFunctionParameter,
 			err_expectedBlockAfterFunctionHead,
+			err_functionIdentifierAlreadyAssigned,
+			err_expectedIdentifier_atFunctionCall,
+			err_expectedOpeningParenthesis_atFunctionCall,
+			err_unknownTypeAtFunctionCallParameter,
+			err_unknownTokenAfterFunctionCallParameter,
+			err_expectedReturningExpression_AtReturn,
+			err_returnHasToBeInTheOuterScope,
 
 			err_unknownASTExpr,
 			err_cannotBreakAtThisPosition,
