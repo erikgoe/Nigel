@@ -24,7 +24,7 @@ namespace nigel
 		bool blockHasHead = false;//If the following block has a head. E. g. a if block.
 		bool previousDo = false;//If the previous was the do keyword.
 		std::list<VariableBinding> functionParameters;//List of parameters (to extend the local variables)
-		std::map<String, std::shared_ptr<AstFunction>> functions;//All available functions. Symbols mapped to thier deklarations.
+		std::map<String, std::map<String, std::shared_ptr<AstFunction>>> functions;//All available functions. Symbols mapped to thier deklarations.
 		size_t openParenthesisCount = 0;
 		size_t openBraceCount = 0;
 

@@ -164,6 +164,7 @@ namespace nigel
 		notificationTexts[NT::err_unknownTokenAfterFunctionCallParameter] = "Unknown token after function call parameter.";
 		notificationTexts[NT::err_expectedReturningExpression_AtReturn] = "Expected retunable at return statement.";
 		notificationTexts[NT::err_returnHasToBeInTheOuterScope] = "The return statement has to be in the outer scope of a function.";
+		notificationTexts[NT::err_notFoundMatchingFunctionDeclaration] = "Did not found a matching function for this call. The parameter types do not match.";
 
 		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
 		notificationTexts[NT::err_cannotBreakAtThisPosition] = "Can't break out of this or outer scope.";

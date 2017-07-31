@@ -100,6 +100,7 @@ namespace nigel
 			err_unknownTokenAfterFunctionCallParameter,
 			err_expectedReturningExpression_AtReturn,
 			err_returnHasToBeInTheOuterScope,
+			err_notFoundMatchingFunctionDeclaration,
 
 			err_unknownASTExpr,
 			err_cannotBreakAtThisPosition,

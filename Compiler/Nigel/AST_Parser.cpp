@@ -473,37 +473,38 @@ namespace nigel
 					bool loopParameterList = true;
 					while( loopParameterList )
 					{
-						auto typeToken = next();
-						BasicType tmpType;
-						if( typeToken->type == TT::type_byte ) tmpType = BasicType::tByte;
-						else if( typeToken->type == TT::type_int ) tmpType = BasicType::tInt;
-						else if( typeToken->type == TT::tok_parenthesis_close )
-						{
-							loopParameterList = false;
-							break;
-						}
-						else
-						{
-							generateNotification( NT::err_unknownTypeAtFunctionCallParameter, typeToken );
-							ignoreExpr();
-							return nullptr;
-						}
 						auto tmpName = next();
 						if( tmpName->type != TT::identifier )
 						{
-							generateNotification( NT::err_expectedIdentifier_atFunctionCall, tmpName );
-							ignoreExpr();
-							return nullptr;
+							if( tmpName->type == TT::tok_parenthesis_close )
+							{
+								loopParameterList = false;
+								break;
+							}
+							else
+							{
+								generateNotification( NT::err_undefinedIdentifier, tmpName );
+								ignoreExpr();
+								return nullptr;
+							}
 						}
 
-						auto var = std::make_shared<AstVariable>();
-						var->model = MemModel::param;
-						var->name = tmpName->as<Token_Identifier>()->identifier;
-						var->retType = tmpType;
+						String varName = tmpName->as<Token_Identifier>()->identifier;
+						bool found = false;
+						VariableBinding bind;
+						size_t scopeOffset = 0;
+						for( auto &v : blockStack.top()->variables ) if( v.first.first == varName )
+						{//Search in variables
+							found = true;
+							bind = v.first;
+							scopeOffset = v.second;
+							break;
+						}
+						auto var = std::make_shared<AstVariable>( *bind.second );
 						var->token = tmpName;
-						ast->parameters.push_back( std::pair<String, std::shared_ptr<AstVariable>>( var->name, var ) );
+						ast->parameters.push_back( std::pair<String, std::shared_ptr<AstVariable>>( varName, var ) );
 
-						ast->symbol += "@" + var->name + "@" + var->returnTypeString();
+						ast->symbol += "@" + var->returnTypeString();
 
 						auto last = next();
 						if( last->type == TT::tok_comma ) loopParameterList = true;
@@ -515,7 +516,14 @@ namespace nigel
 							return nullptr;
 						}
 					}
-					ast->retType = functions[ast->symbol]->retType;
+
+					if( functions[identifier].find( ast->symbol ) == functions[identifier].end() )
+					{
+						generateNotification( NT::err_notFoundMatchingFunctionDeclaration, token );
+						ignoreExpr();
+						return nullptr;
+					}
+					ast->retType = functions[identifier][ast->symbol]->retType;
 
 					newAst = ast;
 				}
@@ -1113,25 +1121,19 @@ namespace nigel
 					return nullptr;
 				}
 
-				auto funcName = next();
-				if( funcName->type != TT::identifier )
+				auto funcNameToken = next();
+				auto funcName = funcNameToken->as<Token_Identifier>()->identifier;
+				if( funcNameToken->type != TT::identifier )
 				{
-					generateNotification( NT::err_expectedIdentifier_atFunction, funcName );
+					generateNotification( NT::err_expectedIdentifier_atFunction, funcNameToken );
 					ignoreExpr();
 					return nullptr;
 				}
-				newAst->symbol += funcName->as<Token_Identifier>()->identifier;
-				if( functions.find( newAst->symbol ) != functions.end() )
-				{
-					generateNotification( NT::err_functionIdentifierAlreadyAssigned, funcName );
-					ignoreExpr();
-					return nullptr;
-				}
-				functions[newAst->symbol] = newAst;
+				newAst->symbol += funcName;
 
 				if( next()->type != TT::tok_parenthesis_open )
 				{
-					generateNotification( NT::err_expectedOpeningParenthesis_atFunction, funcName );
+					generateNotification( NT::err_expectedOpeningParenthesis_atFunction, funcNameToken );
 					ignoreExpr();
 					return nullptr;
 				}
@@ -1168,7 +1170,7 @@ namespace nigel
 					var->token = tmpName;
 					newAst->parameters.push_back( std::pair<String, std::shared_ptr<AstVariable>>( var->name, var ) );
 
-					newAst->symbol += "@" + var->name + "@" + var->returnTypeString();
+					newAst->symbol += "@" + var->returnTypeString();
 
 					auto last = next();
 					if( last->type == TT::tok_comma ) loopParameterList = true;
@@ -1180,6 +1182,15 @@ namespace nigel
 						return nullptr;
 					}
 				}
+
+				if( functions[funcName].find( newAst->symbol ) != functions[funcName].end() )
+				{
+					generateNotification( NT::err_functionIdentifierAlreadyAssigned, funcNameToken );
+					ignoreExpr();
+					return nullptr;
+				}
+				functions[funcName][newAst->symbol] = newAst;
+
 
 				functionParameters = newAst->parameters;
 				blockHasHead = true;

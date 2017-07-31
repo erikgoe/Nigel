@@ -1,13 +1,14 @@
 byte a;
 byte b;
 
-fn byte faculty()
+fn byte faculty( byte base )
 {
+	base = 2;
 	if( b != 0 )
 	{
 		a *= b;
 		b--;
-		faculty();
+		faculty( b );
 	}
 }
 fn byte main()
@@ -15,5 +16,5 @@ fn byte main()
 	a = 1;
 	b = 5;
 	
-	faculty();
+	faculty( b );
 }
