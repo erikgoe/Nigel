@@ -42,7 +42,7 @@ namespace nigel
 		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
 		bool isTypeCondition() { return type == Type::booleanParenthesis || type == Type::keywordCondition || type == Type::arithmenticCondition || type == Type::comparisonCondition || type == Type::combinationCondition; }
 
-		AstExpr( Type type ) : AstExpr::type(type) { }
+		AstExpr( Type type ) : type(type) { }
 		virtual ~AstExpr() {}
 
 		template <typename T>

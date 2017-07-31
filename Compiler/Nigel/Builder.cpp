@@ -40,7 +40,7 @@ namespace nigel
 		String operation;
 		std::set<char> flags;
 		std::map<String, std::list<String>> args;
-		fs::path currentPath = fs::path( argv[0] ).generic( );
+		fs::path currentPath = fs::path( argv[0] );
 		std::list<String> otherParams;
 
 		if( argc < 2 ) return 1;
@@ -142,11 +142,11 @@ namespace nigel
 			if( result != ExecutionResult::success )
 			{//Panic
 				log( "An error occurred while processing '" + operation + "'", LogLevel::Error );
-				if( flags.find( 'b' ) != flags.end() ) _getch();
+				if( flags.find( 'b' ) != flags.end() ) std::cin.ignore();
 				return static_cast< int >( result );
 			}
 		}
-		
+
 		return 0;
 	}
 }

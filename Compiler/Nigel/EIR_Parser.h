@@ -82,10 +82,10 @@ namespace nigel
 		void generateOperation( OperationCombination comb, HexOp op_val, HexOp op_const, HexOp op_atr0, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );
 
 		//Generate a move operation
-		void EIR_Parser::generateMoveAB( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );
+		void generateMoveAB( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp, std::shared_ptr<Token> token );
 
 		//Generate a move operation
-		void EIR_Parser::generateMoveA( OperationType ot, std::shared_ptr<EIR_Operator> op );
+		void generateMoveA( OperationType ot, std::shared_ptr<EIR_Operator> op );
 
 		//Generate a unary left operation. \p op_acc: hexcode for operation in the acc. \p iterations defines the count of iterations on a operation.
 		void generateUnaryLOperation( OperationType comb, HexOp op_acc, std::shared_ptr<EIR_Operator> op, std::shared_ptr<Token> token, bool changeValue = false, u16 iterations = 1 );

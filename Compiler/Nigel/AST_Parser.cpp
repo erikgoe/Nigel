@@ -1256,7 +1256,7 @@ namespace nigel
 	{
 		//Check if lValue is a term
 		std::shared_ptr<AstTerm> clTerm = nullptr;
-		while( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ||
+		while( ( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ) ||
 			( priority == opPriority[TT::op_set] && opPriority[currLVal->as<AstTerm>()->op] == priority ) )
 		{//Check if lTerm has to be splitted up
 			clTerm = currLVal->as<AstTerm>();
@@ -1279,7 +1279,7 @@ namespace nigel
 	{
 		//Check if lValue is a term
 		std::shared_ptr<AstTerm> clTerm = nullptr;
-		while( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ||
+		while( ( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ) ||
 			( priority == opPriority[TT::op_set] && opPriority[currLVal->as<AstTerm>()->op] == priority ) )
 		{//Check if lTerm has to be splitted up
 			clTerm = currLVal->as<AstTerm>();
@@ -1336,7 +1336,7 @@ namespace nigel
 				clTerm = currLVal->as<AstComparisonCondition>();
 				currLVal = currLVal->as<AstComparisonCondition>()->rVal;
 			}
-			else if( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ||
+			else if( ( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ) ||
 				( priority == opPriority[TT::op_set] && opPriority[currLVal->as<AstTerm>()->op] == priority ) )
 			{
 				clTerm = currLVal->as<AstTerm>();
@@ -1366,7 +1366,7 @@ namespace nigel
 	{
 		//Check if lValue is a term
 		std::shared_ptr<AstTerm> clTerm = nullptr;
-		while( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ||
+		while( ( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ) ||
 			( priority == opPriority[TT::op_set] && opPriority[currLVal->as<AstTerm>()->op] == priority ) )
 		{//Check if lTerm has to be splitted up
 			clTerm = currLVal->as<AstTerm>();

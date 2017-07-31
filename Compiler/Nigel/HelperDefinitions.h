@@ -116,19 +116,15 @@ namespace helper
 	};
 
 		//Log the specified utf-8-message with the user-defined logger-function. If no function has been defined, std-streams will be used. Not multithreading-safe! A newline will be automatically attached.
-	inline void log( const String8 &text, LogLevel level = LogLevel::Information );
+	void log( const String8 &text, LogLevel level = LogLevel::Information );
 		//Log the specified utf-8-message with the user-defined logger-function. If no function has been defined, std-streams will be used. Not multithreading-safe! No newline will be automatically attached.
-	inline void logMultiline( const String8 &text, LogLevel level = LogLevel::Information );
+	void logMultiline( const String8 &text, LogLevel level = LogLevel::Information );
 
 	//Using boost namespace
 	namespace fs = boost::filesystem;
 
 	//Resolve path. "/x/../y" -> "/y".
 	fs::path resolve( const fs::path &p, const fs::path &base = fs::current_path() );
-
-	//Start a Windows-application in its own thread. To open a file set the applicationpath (e. g. "c:\\editor.exe"  or "c:\\explorer.exe"(starts default application) on windows) and the file as parameter. Returns true application successfully started, otherwise errorlog will be created.
-	bool runApp( const String8 &FileName, const String8 &FileParam = "" );
-
 }
 using namespace helper;
 

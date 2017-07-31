@@ -142,15 +142,15 @@ namespace nigel
 		}
 
 		CompileNotification( Type type, std::shared_ptr<fs::path> path )
-			: CompileNotification::type( type ), CompileNotification::token( nullptr ), CompileNotification::line( 0 ), CompileNotification::lineText( nullptr ), CompileNotification::file( path )
+			: type( type ), token( nullptr ), line( 0 ), lineText( nullptr ), file( path )
 		{
 		}
 		CompileNotification( Type type, std::shared_ptr<Token> token )
-			: CompileNotification::type(type), CompileNotification::token(token), CompileNotification::line(token->lineNo), CompileNotification::lineText(token->line), CompileNotification::file(token->path)
+			: type(type), token(token), line(token->lineNo), lineText(token->line), file(token->path)
 		{
 		}
 		CompileNotification( Type type, size_t line, std::shared_ptr<String> lineText, std::shared_ptr<fs::path> file )
-			: CompileNotification::type( type ), CompileNotification::token( nullptr ), CompileNotification::line(line), CompileNotification::lineText( lineText ), CompileNotification::file( file )
+			: type( type ), token( nullptr ), line(line), lineText( lineText ), file( file )
 		{
 		}
 	};

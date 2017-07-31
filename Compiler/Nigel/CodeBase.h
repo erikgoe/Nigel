@@ -30,12 +30,12 @@ namespace nigel
 			std::shared_ptr<fs::path> path;
 			size_t line;
 			LineContent() {}
-			LineContent( std::shared_ptr<String> content, std::shared_ptr<fs::path> path, size_t line ) : LineContent::content( content ), LineContent::path( path ), LineContent::line( line ) {}
+			LineContent( std::shared_ptr<String> content, std::shared_ptr<fs::path> path, size_t line ) : content( content ), path( path ), line( line ) {}
 		};
 		std::vector<LineContent> fileCont;//Content from the pre-processed file, seperated in lines (content-lineNr-pairs)
 
 		std::list<std::shared_ptr<Token>> lexerStruct;//List of tokens
-		
+
 		std::shared_ptr<AstBlock> globalAst;//Initial block of execution.
 
 		std::list<std::shared_ptr<EIR_Command>> eirCommands;//List of commands represending the EIR.
