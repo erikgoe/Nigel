@@ -1,7 +1,7 @@
 #include "stdnigel.ngl"
 #define u8 byte
 
-fn int main() {
+fn byte main() {
 	byte a = -2;
 	byte b = 7;
 	

@@ -1,1 +1,4 @@
-val = 10;
+fn byte main()
+{
+	byte val = 10;
+}

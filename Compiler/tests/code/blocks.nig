@@ -1,9 +1,12 @@
-byte a = 10;
-byte b;
-
-byte c = 4;
-if( c > 3 )
+fn byte main()
 {
-	break;
-	c = a;
+	byte a = 10;
+	byte b;
+	
+	byte c = 4;
+	if( c > 3 )
+	{
+		break;
+		c = a;
+	}
 }
