@@ -92,7 +92,7 @@ namespace nigel
 							base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						}
-						else if( op->model == MemModel::stack )
+						else if( op->isOnStack() )
 						{
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						}
@@ -217,7 +217,7 @@ namespace nigel
 							base.hexBuffer.push_back( static_cast< u8 >( op->address << 8 ) );
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						}
-						else if( op->model == MemModel::stack )
+						else if( op->isOnStack() )
 						{
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						}

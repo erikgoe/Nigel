@@ -38,10 +38,10 @@ namespace nigel
 		else if( type == Token::Type::op_set ) return "=";
 		else if( type == Token::Type::op_eql ) return "==";
 		else if( type == Token::Type::op_not_eql ) return "!=";
-		else if( type == Token::Type::op_more ) return "<";
-		else if( type == Token::Type::op_less ) return ">";
-		else if( type == Token::Type::op_more_eql ) return "<=";
-		else if( type == Token::Type::op_less_eql ) return ">=";
+		else if( type == Token::Type::op_more ) return ">";
+		else if( type == Token::Type::op_less ) return "<";
+		else if( type == Token::Type::op_more_eql ) return ">=";
+		else if( type == Token::Type::op_less_eql ) return "<=";
 		else if( type == Token::Type::op_shift_left ) return "<<";
 		else if( type == Token::Type::op_shift_right ) return ">>";
 		else if( type == Token::Type::op_shift_left_set ) return "<<=";

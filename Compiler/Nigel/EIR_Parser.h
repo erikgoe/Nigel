@@ -93,10 +93,10 @@ namespace nigel
 		//Generate a unary right operation. \p op_acc: hexcode for operation in the acc.
 		void generateUnaryROperation( OperationType comb, HexOp op_acc, std::shared_ptr<EIR_Operator> op, std::shared_ptr<Token> token );
 
-		//Resolve a SP-relative address and save it to r0
+		//Resolve a BR-relative address and save it to r0
 		void generateLoadStackR0( std::shared_ptr<EIR_Operator> op );
 
-		//Resolve a SP-relative address and save it to r1
+		//Resolve a BR-relative address and save it to r1
 		void generateLoadStackR1( std::shared_ptr<EIR_Operator> op );
 
 

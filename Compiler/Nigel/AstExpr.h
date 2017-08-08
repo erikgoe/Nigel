@@ -69,6 +69,7 @@ namespace nigel
 		std::list<std::shared_ptr<AstExpr>> content;
 		std::list<std::pair<VariableBinding, size_t>> variables;//All available variables. Bindings mapped to their relative scope offset.
 		std::list<VariableBinding> newVariables;//Variables which are declated in this block
+		std::list<VariableBinding> parameters;//Variables which come into the block as parameters
 
 		AstBlock() : AstExpr( AstExpr::Type::block )
 		{
@@ -296,7 +297,7 @@ namespace nigel
 	{
 	public:
 		String symbol;
-		std::list<VariableBinding> parameters;
+		std::list<std::shared_ptr<AstReturning>> parameters;
 
 		AstFunctionCall() : AstReturning( AstExpr::Type::functionCall ) {}
 	};

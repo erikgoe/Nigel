@@ -141,6 +141,15 @@ namespace nigel
 			this->id = id;
 			this->size = size;
 		}
+			//Returns true if the memory model defines the variable to be on the stack.
+		static bool isOnStack( MemModel model )
+		{
+			return model == MemModel::stack || model == MemModel::param;
+		}
+		bool isOnStack()
+		{
+			return isOnStack( model );
+		}
 	};
 
 		//Constant value from a literal
@@ -174,6 +183,7 @@ namespace nigel
 			B = 0xF0,//B-register
 			SP = 0x81,//Stack pointer
 			BR = 0x07,//Block register: special register which points to the begin of the current block, which then points to the begin of the previous block.
+			SW = 0x6,//Swap register: special register which is reserved to save the acc, when acc is needed for stack manipulation.
 
 			count
 		};

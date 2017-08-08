@@ -470,45 +470,32 @@ namespace nigel
 						return nullptr;
 					}
 
+					openParenthesisCount++;
+
 					bool loopParameterList = true;
 					while( loopParameterList )
 					{
-						auto tmpName = next();
-						if( tmpName->type != TT::identifier )
+						auto nextAst = resolveNextExpr();
+						if( openParenthesisCount == 0 ) break;
+
+						if( !nextAst->isTypeReturnable() )
 						{
-							if( tmpName->type == TT::tok_parenthesis_close )
-							{
-								loopParameterList = false;
-								break;
-							}
-							else
-							{
-								generateNotification( NT::err_undefinedIdentifier, tmpName );
-								ignoreExpr();
-								return nullptr;
-							}
+							generateNotification( NT::err_expectedReturningExpression_atFunctionCall, nextAst->token );
+							ignoreExpr();
+							return nullptr;
 						}
 
-						String varName = tmpName->as<Token_Identifier>()->identifier;
-						bool found = false;
-						VariableBinding bind;
-						size_t scopeOffset = 0;
-						for( auto &v : blockStack.top()->variables ) if( v.first.first == varName )
-						{//Search in variables
-							found = true;
-							bind = v.first;
-							scopeOffset = v.second;
-							break;
-						}
-						auto var = std::make_shared<AstVariable>( *bind.second );
-						var->token = tmpName;
-						ast->parameters.push_back( std::pair<String, std::shared_ptr<AstVariable>>( varName, var ) );
+						ast->parameters.push_back( nextAst->as<AstReturning>() );
 
-						ast->symbol += "@" + var->returnTypeString();
+						ast->symbol += "@" + nextAst->as<AstReturning>()->returnTypeString();
 
 						auto last = next();
 						if( last->type == TT::tok_comma ) loopParameterList = true;
-						else if( last->type == TT::tok_parenthesis_close ) loopParameterList = false;
+						else if( last->type == TT::tok_parenthesis_close )
+						{
+							loopParameterList = false;
+							openParenthesisCount--;
+						}
 						else
 						{
 							generateNotification( NT::err_unknownTokenAfterFunctionCallParameter, last );
@@ -900,7 +887,12 @@ namespace nigel
 
 			newAst->variables.insert( newAst->variables.begin(), blockStack.top()->variables.begin(), blockStack.top()->variables.end() );
 			for( auto &v : newAst->variables ) v.second++;//Increment scope offset.
-			for( auto &v : functionParameters ) newAst->variables.push_back( std::pair<VariableBinding, size_t>( v, 0 ) );
+			for( auto &v : functionParameters )
+			{
+				newAst->variables.push_back( std::pair<VariableBinding, size_t>( v, 0 ) );
+				newAst->parameters.push_back( v );
+			}
+			functionParameters.clear();
 			blockStack.push( newAst );
 
 			while( myOpenBraceNr <= openBraceCount )//Iterate for this block
@@ -1130,7 +1122,8 @@ namespace nigel
 					return nullptr;
 				}
 				newAst->symbol += funcName;
-
+				
+				//Loop all parameter variables
 				if( next()->type != TT::tok_parenthesis_open )
 				{
 					generateNotification( NT::err_expectedOpeningParenthesis_atFunction, funcNameToken );
@@ -1195,14 +1188,13 @@ namespace nigel
 				functionParameters = newAst->parameters;
 				blockHasHead = true;
 
+				//Resolve block
 				auto nextAst = resolveNextExpr();
 				if( nextAst->type != AstExpr::Type::block )
 				{
 					generateNotification( NT::err_expectedBlockAfterFunctionHead, nextAst->token );
 				}
 				newAst->content = nextAst->as<AstBlock>();
-
-				functionParameters.clear();
 
 
 				blockStack.top()->content.push_back( newAst );//Add to ast

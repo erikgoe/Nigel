@@ -94,7 +94,7 @@ namespace nigel
 			err_unknownTokenAfterFunctionParameter,
 			err_expectedBlockAfterFunctionHead,
 			err_functionIdentifierAlreadyAssigned,
-			err_expectedIdentifier_atFunctionCall,
+			err_expectedReturningExpression_atFunctionCall,
 			err_expectedOpeningParenthesis_atFunctionCall,
 			err_unknownTypeAtFunctionCallParameter,
 			err_unknownTokenAfterFunctionCallParameter,

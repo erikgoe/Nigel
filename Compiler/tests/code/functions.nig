@@ -1,20 +1,16 @@
-byte a;
-byte b;
+byte result;
 
-fn byte faculty( byte base )
+fn byte faculty( byte val )
 {
-	base = 2;
-	if( b != 0 )
+	byte ret = 1;
+	if( val > 1 ) 
 	{
-		a *= b;
-		b--;
-		faculty( b );
+		ret = faculty( val-1 )*val;
 	}
+	return ret;
 }
+
 fn byte main()
-{
-	a = 1;
-	b = 5;
-	
-	faculty( b );
+{	
+	result = faculty( 4 );
 }
