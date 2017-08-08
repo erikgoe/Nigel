@@ -71,10 +71,10 @@ The Compiler is divided into these parts:
 The resulting Hex code can be uploaded onto a 8051 microcontroller or be interpreted in a simulator.
 
 ### Next development steps
-* 16+ types
 * ptr
+* new, delete (dynamic memory)
 * 'Magic addresses' of the microcontroller (ports, etc.)
-* functions
+* std-library
 
 ## Getting started
 ### Building
