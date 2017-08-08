@@ -5,12 +5,12 @@ fn byte faculty( byte val )
 	byte ret = 1;
 	if( val > 1 ) 
 	{
-		ret = faculty( val-1 )*val;
+		ret = faculty( val-1 );
 	}
-	return ret;
+	return ret * val;
 }
 
 fn byte main()
 {	
-	result = faculty( 4 );
+	result = faculty( 5 );
 }

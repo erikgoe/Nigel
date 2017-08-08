@@ -1221,8 +1221,7 @@ namespace nigel
 				}
 				newAst->expr = nextAst->as<AstReturning>();
 
-				blockStack.top()->content.push_back( newAst );//Add to ast
-				lValue = nullptr;
+				lValue = newAst;
 
 				return newAst;
 			}
@@ -1260,18 +1259,30 @@ namespace nigel
 	std::shared_ptr<AstReturning> AST_Parser::splitMostRightExpr( std::shared_ptr<AstExpr> currLVal, std::shared_ptr<AstTerm> cExpr, int priority )
 	{
 		//Check if lValue is a term
-		std::shared_ptr<AstTerm> clTerm = nullptr;
-		while( ( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ) ||
-			( priority == opPriority[TT::op_set] && opPriority[currLVal->as<AstTerm>()->op] == priority ) )
-		{//Check if lTerm has to be splitted up
-			clTerm = currLVal->as<AstTerm>();
-			currLVal = currLVal->as<AstTerm>()->rVal;
+		std::shared_ptr<AstExpr> clTerm = nullptr;//Should be a term or a return statement
+		while( true )
+		{//Split all possible (unatomic) expressions
+			if( ( currLVal->type == AstExpr::Type::term && opPriority[currLVal->as<AstTerm>()->op] < priority ) ||
+				( priority == opPriority[TT::op_set] && opPriority[currLVal->as<AstTerm>()->op] == priority ) )
+			{
+				clTerm = currLVal;
+				currLVal = currLVal->as<AstTerm>()->rVal;
+			}
+			else if( currLVal->type == AstExpr::Type::returnStat )
+			{
+				clTerm = currLVal;
+				currLVal = currLVal->as<AstReturnStatement>()->expr;
+			}
+			else break;
 		}
 
 		//Test for lTerm
 		if( clTerm != nullptr )
 		{//Min. 1 term was splitted up
-			clTerm->rVal = cExpr;
+			if( clTerm->type == AstExpr::Type::term )
+				clTerm->as<AstTerm>()->rVal = cExpr;
+			else if( clTerm->type == AstExpr::Type::returnStat )
+				clTerm->as<AstReturnStatement>()->expr = cExpr;
 			return currLVal->as<AstReturning>();
 		}
 		else
