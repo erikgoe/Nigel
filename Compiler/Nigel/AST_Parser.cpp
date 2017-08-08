@@ -82,7 +82,7 @@ namespace nigel
 		}
 		else if( ast->type == AstExpr::Type::parenthesis )
 		{//Print parenthesis block content
-			out = tabs + "<PAR> : " + ast->as<AstParenthesis>()->returnTypeString();
+			out = tabs + "<PAN> : " + ast->as<AstParenthesis>()->returnTypeString();
 			log( out );
 			printSubAST( ast->as<AstParenthesis>()->content, tabCount + 1 );
 		}
@@ -168,6 +168,10 @@ namespace nigel
 			out = tabs + "<CALL> " + f->symbol + " : "
 				+ AstReturning::returnTypeString( f->retType );
 			log( out );
+			for( auto p : f->parameters )
+			{
+				printSubAST( p, tabCount + 1 );
+			}
 		}
 		else if( ast->type == AstExpr::Type::returnStat )
 		{//Return statement
@@ -471,13 +475,22 @@ namespace nigel
 					}
 
 					openParenthesisCount++;
+					expectValue = true;
 
 					bool loopParameterList = true;
 					while( loopParameterList )
 					{
 						auto nextAst = resolveNextExpr();
-						if( openParenthesisCount == 0 ) break;
+						if( openParenthesisCount == 0 || nextAst == nullptr )
+						{//closed parenthesis or comma
+							ast->parameters.push_back( lValue->as<AstReturning>() );
+							ast->symbol += "@" + lValue->as<AstReturning>()->returnTypeString();
+							expectValue = true;
 
+							if( openParenthesisCount == 0 ) break;
+							else if( nextAst == nullptr ) continue;//comma
+						}
+						expectValue = false;
 						if( !nextAst->isTypeReturnable() )
 						{
 							generateNotification( NT::err_expectedReturningExpression_atFunctionCall, nextAst->token );
@@ -485,23 +498,8 @@ namespace nigel
 							return nullptr;
 						}
 
-						ast->parameters.push_back( nextAst->as<AstReturning>() );
+						lValue = nextAst;
 
-						ast->symbol += "@" + nextAst->as<AstReturning>()->returnTypeString();
-
-						auto last = next();
-						if( last->type == TT::tok_comma ) loopParameterList = true;
-						else if( last->type == TT::tok_parenthesis_close )
-						{
-							loopParameterList = false;
-							openParenthesisCount--;
-						}
-						else
-						{
-							generateNotification( NT::err_unknownTokenAfterFunctionCallParameter, last );
-							ignoreExpr();
-							return nullptr;
-						}
 					}
 
 					if( functions[identifier].find( ast->symbol ) == functions[identifier].end() )
@@ -1236,6 +1234,10 @@ namespace nigel
 				blockStack.top()->content.push_back( lValue );//Add to ast
 			lValue = nullptr;
 			expectValue = false;
+			return nullptr;//Finish expression
+		}
+		else if( token->type == TT::tok_comma )
+		{//Enumeration dividing;
 			return nullptr;//Finish expression
 		}
 		else if( token->type == TT::eof )

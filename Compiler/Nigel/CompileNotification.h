@@ -97,7 +97,6 @@ namespace nigel
 			err_expectedReturningExpression_atFunctionCall,
 			err_expectedOpeningParenthesis_atFunctionCall,
 			err_unknownTypeAtFunctionCallParameter,
-			err_unknownTokenAfterFunctionCallParameter,
 			err_expectedReturningExpression_AtReturn,
 			err_returnHasToBeInTheOuterScope,
 			err_notFoundMatchingFunctionDeclaration,
