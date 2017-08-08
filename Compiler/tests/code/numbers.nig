@@ -1,4 +1,9 @@
 #define ONE 1
 #define TWO 2
 
-byte answerToEverything = 42;
+byte answerToEverything;
+
+fn byte main()
+{
+	answerToEverything = 42;
+}

@@ -39,13 +39,21 @@ namespace nigel
 			err_undefinedIdentifier,
 			err_noAllocationAfterVariableAttribute,
 
+			err_unexpectedReturningBeforeByteKeyword,
+			err_unexpectedReturningBeforeFastKeyword,
+			err_unexpectedReturningBeforeNormKeyword,
+			err_unexpectedReturningBeforeUnsignedKeyword,
 			err_unexpectedReturningBeforeIdentifier,
 			err_unexpectedReturningBeforeLiteral,
 			err_unexpectedReturningBeforeParenthesisBlock,
+			err_unexpectedReturningBeforeBlock,
+			err_unexpectedReturningBeforeFunctionDeklaration,
 			err_expectedIdentifierBeforeOperator,
 			err_expectedIdentifierAfterOperator,
 			err_expectedExprWithReturnValue_atOperation,
 			err_unmatchingTypeFound_atTerm,
+			err_unknownBinaryOperator,
+			err_unknownUnaryOperator,
 
 			err_cannotSetAConstantLiteral,
 			err_onlyConstantsAreAllowedForBitShifts,
@@ -54,11 +62,53 @@ namespace nigel
 
 			err_expectedIdentifierInParenthesis,
 			err_expectedExprWithReturnValue_atParenthesis,
+			err_expectedExprWithBooleanValue_atParenthesis,
 			err_unexpectedLiteralInParenthesis,
 			err_unexpectedIdentifierInParenthesis,
 			err_expectedTermAfterReturnableInParenthesis,
 			err_unexpectedCloseOfParenthesis,
 			err_aParenthesisWasNotClosed,
+
+			err_unexpectedCloseOfBlock,
+			err_aBlockWasNotClosed,
+
+			err_expectParenthesisAfterIfKeyword,
+			err_expectConditionInParanthesis,
+			err_expectBlockAfterIf,
+			err_expectBlockAfterElse,
+
+			err_expectedExprWithConditionalValue_atOperation,
+
+			err_expectParenthesisAfterWhileKeyword,
+			err_expectBlockAfterWhile,
+			err_comparisonConditionCannotBeThisRValue,
+			err_unexpectedIdentifierBeforeNotOperator,
+
+			err_operationsAreNotAllowedInGlobalScope,
+			err_functionDefinitionsAreNotAllowedInLocalScope,
+
+			err_unknownTypeAtFunction,
+			err_expectedIdentifier_atFunction,
+			err_expectedOpeningParenthesis_atFunction,
+			err_unknownTypeAtFunctionParameter,
+			err_unknownTokenAfterFunctionParameter,
+			err_expectedBlockAfterFunctionHead,
+			err_functionIdentifierAlreadyAssigned,
+			err_expectedReturningExpression_atFunctionCall,
+			err_expectedOpeningParenthesis_atFunctionCall,
+			err_unknownTypeAtFunctionCallParameter,
+			err_expectedReturningExpression_AtReturn,
+			err_returnHasToBeInTheOuterScope,
+			err_notFoundMatchingFunctionDeclaration,
+
+			err_unknownASTExpr,
+			err_cannotBreakAtThisPosition,
+
+			err_internal_blockNotFound,
+			err_internal_conditionalNotFound,
+			err_functionDefinitionNotFound,
+			err_mainEntryPointNotFound,
+			err_symbolIsAlreadyDefined,
 
 
 			begin_warning = 0x7fff,//All warnings will start at this position.
@@ -74,6 +124,7 @@ namespace nigel
 
 			imp_operationOnTwoConstantsCanBePrevented,
 			imp_operationOnConstantCanBePrevented,
+
 
 			count
 		} type;
@@ -91,15 +142,15 @@ namespace nigel
 		}
 
 		CompileNotification( Type type, std::shared_ptr<fs::path> path )
-			: CompileNotification::type( type ), CompileNotification::token( nullptr ), CompileNotification::line( 0 ), CompileNotification::lineText( nullptr ), CompileNotification::file( path )
+			: type( type ), token( nullptr ), line( 0 ), lineText( nullptr ), file( path )
 		{
 		}
 		CompileNotification( Type type, std::shared_ptr<Token> token )
-			: CompileNotification::type(type), CompileNotification::token(token), CompileNotification::line(token->lineNo), CompileNotification::lineText(token->line), CompileNotification::file(token->path)
+			: type(type), token(token), line(token->lineNo), lineText(token->line), file(token->path)
 		{
 		}
 		CompileNotification( Type type, size_t line, std::shared_ptr<String> lineText, std::shared_ptr<fs::path> file )
-			: CompileNotification::type( type ), CompileNotification::token( nullptr ), CompileNotification::line(line), CompileNotification::lineText( lineText ), CompileNotification::file( file )
+			: type( type ), token( nullptr ), line(line), lineText( lineText ), file( file )
 		{
 		}
 	};

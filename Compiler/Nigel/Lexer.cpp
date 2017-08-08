@@ -113,6 +113,11 @@ namespace nigel
 		bool isLineComment = false;//If is comment from // untile lineend
 		bool isMultiComment = false;//If is multiline-comment with /* */
 		int multiCommentCount = 0;//Enables nested comments
+		if( !base.fileCont.empty() )
+		{
+			currLine = base.fileCont[0].content;
+			currPath = base.fileCont[0].path;
+		}
 
 		while( !finish )
 		{//Iterate whole file content
@@ -339,9 +344,14 @@ namespace nigel
 					tmp = std::make_shared<Token>( Token::Type::cf_do );
 					token->swap( tmp );
 				}
+				else if( identifier == "break" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::cf_break );
+					token->swap( tmp );
+				}
 				else if( identifier == "return" )
 				{
-					tmp = std::make_shared<Token>( Token::Type::return_fn );
+					tmp = std::make_shared<Token>( Token::Type::cf_return );
 					token->swap( tmp );
 				}
 				else if( identifier == "new" )
@@ -352,6 +362,16 @@ namespace nigel
 				else if( identifier == "delete" )
 				{
 					tmp = std::make_shared<Token>( Token::Type::dy_delete );
+					token->swap( tmp );
+				}
+				else if( identifier == "true" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::literalTrue );
+					token->swap( tmp );
+				}
+				else if( identifier == "false" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::literalFalse );
 					token->swap( tmp );
 				}
 			}

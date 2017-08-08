@@ -2,12 +2,24 @@
 
 //#pragma memmodel fast
 
-byte a = 2;
-byte b = 4;
-byte c = 5;
-byte d = 10;
-byte e = 3;
-
-e = a*(b+c*d);
-
-//e = ~a;
+fn byte main()
+{
+	byte a = 2;
+	byte b = 4;
+	byte c = a+b;
+	{
+		byte c = 42;
+		byte c2 = 1;
+		byte c3 = 1;
+		c = b;
+		{
+			byte d = 16;
+			{
+				byte e = 100;
+				c = d;
+				c2 = 42;
+				c3 = e;
+			}
+		}
+	}
+}

@@ -1,0 +1,7 @@
+fn byte main()
+{	
+	byte a;
+	byte b;
+	b = 5;
+	a = a - b - 2;
+}

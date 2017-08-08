@@ -2,7 +2,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <shellapi.h> 	
+#include <shellapi.h>
 
 
 //Undefs of the standardlibrary
@@ -24,7 +24,6 @@
 
 
 #include <time.h>
-#include <conio.h>
 #include <cstdlib>
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +71,7 @@
 
 #ifdef _WIN32
 //Bind libraries
-//In debug- and release-mode	
+//In debug- and release-mode
 
 #ifdef _DEBUG //In debug-mode
 #pragma comment(linker, "/subsystem:console")//Maintain console

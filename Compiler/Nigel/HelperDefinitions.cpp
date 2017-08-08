@@ -34,7 +34,7 @@ namespace helper
 
 
 	#if (_MSC_VER == 1900 || _MSC_VER == 1910) //bug-workaround (VC_2015)
-	
+
 		String8 to_utf8( const String16 &str )
 		{
 			std::wstring_convert<std::codecvt_utf8<int16_t>, int16_t> converter;
@@ -91,10 +91,10 @@ namespace helper
 				return U"";
 			}
 		}
-	
-	
+
+
 	#else
-	
+
 		String8 to_utf8( const String16 &str )
 		{
 			std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> converter;
@@ -175,6 +175,7 @@ namespace helper
 		static std::recursive_mutex mx;
 		std::lock_guard<std::recursive_mutex> lock( mx );
 
+		#ifdef _WIN32
 		OutputDebugStringW( to_wide( String8( level == LogLevel::Debug ? "D" : level == LogLevel::Information ? "I" : level == LogLevel::Warning ? "W" : level == LogLevel::Error ? "E" : "UKN" ) + "/ " + text ).c_str() );
 
 		HANDLE  consoleHandle = GetStdHandle( STD_OUTPUT_HANDLE );
@@ -182,6 +183,7 @@ namespace helper
 		else if( level == LogLevel::Information ) SetConsoleTextAttribute( consoleHandle, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY );
 		else if( level == LogLevel::Warning )SetConsoleTextAttribute( consoleHandle, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY );
 		else if( level == LogLevel::Error ) SetConsoleTextAttribute( consoleHandle, FOREGROUND_RED | FOREGROUND_INTENSITY );
+		#endif // _WIN32
 
 		if( level == LogLevel::Error || level == LogLevel::Warning )
 		{
@@ -191,7 +193,9 @@ namespace helper
 		{
 			std::wcout << to_wide( text );
 		}
+		#ifdef _WIN32
 		SetConsoleTextAttribute( consoleHandle, 7 );//Reset color
+		#endif // _WIN32
 	}
 
 	fs::path resolve( const fs::path &p, const fs::path &base )
@@ -222,151 +226,5 @@ namespace helper
 			}
 		}
 		return ret;
-	}
-
-	bool runApp( const String8 &path, const String8 &param )
-	{
-		int ret = reinterpret_cast<int>( ShellExecute( 0, L"open", to_wide( path ).c_str(), to_wide( param ).c_str(), 0, SW_SHOWNORMAL ) );
-
-		if( ret <= 32 )
-		{
-			switch( ret )
-			{
-			case ERROR_FILE_NOT_FOUND:
-				log( "RunApp failed: file not found: '" + path + "'", LogLevel::Error );
-				break;
-
-			case ERROR_PATH_NOT_FOUND:
-				log( "RunApp failed: path not found: '" + path + "'", LogLevel::Error );
-				break;
-
-			case ERROR_BAD_FORMAT:
-				log( "RunApp failed: application is invalid or broken: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_ACCESSDENIED:
-				log( "RunApp failed: access denied: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DDEBUSY:
-				log( "RunApp failed: DDE operation is busy. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DDEFAIL:
-				log( "RunApp failed: DDE operation failed. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DDETIMEOUT:
-				log( "RunApp failed: DDE operation timed out. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DLLNOTFOUND:
-				log( "RunApp failed: dynamic-link library not found. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_SHARE:
-				log( "RunApp failed: cannot share an open file. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_ASSOCINCOMPLETE:
-				log( "RunApp failed: file association information not complete. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_NOASSOC:
-				log( "RunApp failed: file association not available. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_OOM:
-				log( "RunApp failed: out of memory. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case 0:
-				log( "RunApp failed. out of memory. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			default:
-				log( "RunApp failed: Cannot open file. File: '" + path + "'", LogLevel::Error );
-				break;
-			}
-			return false;
-		}
-		else
-		{
-			log( "RunApp file: '" + path + "'" );
-			return true;
-		}
-	}
-
-	bool printFile( const String8 &path )
-	{
-		int ret = ( int )ShellExecute( 0, L"print", to_wide( path ).c_str(), 0, 0, SW_HIDE );
-
-		if( ret <= 32 )
-		{
-			switch( ret )
-			{
-			case ERROR_FILE_NOT_FOUND:
-				log( "Print file failed: file not found: '" + path + "'", LogLevel::Error );
-				break;
-
-			case ERROR_PATH_NOT_FOUND:
-				log( "Print file failed: path not found: '" + path + "'", LogLevel::Error );
-				break;
-
-			case ERROR_BAD_FORMAT:
-				log( "Print file failed: application is invalid or broken: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_ACCESSDENIED:
-				log( "Print file failed: access denied: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DDEBUSY:
-				log( "Print file failed: DDE operation is busy. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DDEFAIL:
-				log( "Print file failed: DDE operation failed. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DDETIMEOUT:
-				log( "Print file failed: DDE operation timed out. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_DLLNOTFOUND:
-				log( "Print file failed: dynamic-link library not found. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_SHARE:
-				log( "Print file failed: cannot share an open file. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_ASSOCINCOMPLETE:
-				log( "Print file failed: file association information not complete. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_NOASSOC:
-				log( "Print file failed: file association not available. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case SE_ERR_OOM:
-				log( "Print file failed: out of memory. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			case 0:
-				log( "Print file failed. out of memory. File: '" + path + "'", LogLevel::Error );
-				break;
-
-			default:
-				log( "Print file failed: Cannot open file. File: '" + path + "'", LogLevel::Error );
-				break;
-			}
-			return false;
-		}
-		else
-		{
-			log( "Print file file: '" + path + "'", LogLevel::Error );
-			return true;
-		}
 	}
 }

@@ -18,10 +18,21 @@ namespace nigel
 			allocation,
 			literal,
 			parenthesis,
+
+			booleanParenthesis,
+			ifStat,
+			elseStat,
+			whileStat,
+			keywordCondition,
+			arithmenticCondition,
+			comparisonCondition,
+			combinationCondition,
+
+			breakStat,
+
+			functionDefinition,
 			functionCall,
 			returnStat,
-			ifStat,
-			whileStat,
 
 			count
 		} type;
@@ -29,8 +40,9 @@ namespace nigel
 		std::shared_ptr<Token> token;//Main ast-token
 
 		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
+		bool isTypeCondition() { return type == Type::booleanParenthesis || type == Type::keywordCondition || type == Type::arithmenticCondition || type == Type::comparisonCondition || type == Type::combinationCondition; }
 
-		AstExpr( Type type ) : AstExpr::type(type) { }
+		AstExpr( Type type ) : type(type) { }
 		virtual ~AstExpr() {}
 
 		template <typename T>
@@ -40,18 +52,29 @@ namespace nigel
 		}
 	};
 
-	//Class deklaration
+	//Class deklarations
 	class AstVariable;
+	class AstFunction;
+
+	using VariableBinding = std::pair<String, std::shared_ptr<AstVariable>>;
 
 		//Bock of linear executable expressions
 	class AstBlock : public AstExpr
 	{
-	public:
-		String name;//Block name
-		std::list<std::shared_ptr<AstExpr>> content;
-		std::map<String, std::shared_ptr<AstVariable>> variables;
+		static u32 nextID;//Enables creation of new variables.
 
-		AstBlock() : AstExpr(AstExpr::Type::block) {}
+	public:
+		String name;//Block name todo check if needed
+		u32 id;//Unique id for this block.
+		std::list<std::shared_ptr<AstExpr>> content;
+		std::list<std::pair<VariableBinding, size_t>> variables;//All available variables. Bindings mapped to their relative scope offset.
+		std::list<VariableBinding> newVariables;//Variables which are declated in this block
+		std::list<VariableBinding> parameters;//Variables which come into the block as parameters
+
+		AstBlock() : AstExpr( AstExpr::Type::block )
+		{
+			id = nextID++;
+		}
 	};
 
 		//Basic types of nigel
@@ -68,8 +91,11 @@ namespace nigel
 		//Defines where a variable will be saved.
 	enum class MemModel
 	{
-		fast,
-		large,
+		fast,//Globals in intern ram
+		large,//Globals in extern ram
+		stack,//Locals on stack
+		heap,//Dynamically allocated
+		param,//Parameter similar to stack
 
 		count
 	};
@@ -80,17 +106,22 @@ namespace nigel
 	public:
 		BasicType retType;
 
-		String returnTypeString()
+		static String returnTypeString( BasicType type )
 		{
-			if( retType == tByte ) return "byte";
-			else if( retType == tInt ) return "int";
-			else if( retType == tUbyte ) return "unsigned byte";
-			else if( retType == tUint ) return "unsigned int";
+			if( type == tByte ) return "byte";
+			else if( type == tInt ) return "int";
+			else if( type == tUbyte ) return "unsigned byte";
+			else if( type == tUint ) return "unsigned int";
 			else return "-!-UNKNOWN-!-";
 		}
 
+		String returnTypeString()
+		{
+			return returnTypeString( retType );
+		}
+
 		AstReturning( AstExpr::Type type ) : AstExpr( type ) {}
-		~AstReturning() {}
+		virtual ~AstReturning() {}
 	};
 
 		//A variable
@@ -99,6 +130,17 @@ namespace nigel
 	public:
 		MemModel model = MemModel::large;
 		String name;
+		size_t scopeOffset = 0;//Offset of outer scope. Will be used in MemModel::stack.
+
+		String modelString()
+		{
+			if( model == MemModel::fast ) return "fast";
+			else if( model == MemModel::large ) return "large";
+			else if( model == MemModel::stack ) return "stack";
+			else if( model == MemModel::heap ) return "heap";
+			else if( model == MemModel::param ) return "param";
+			else return "-!-UNKNOWN-!-";
+		}
 
 		AstVariable() : AstReturning( AstExpr::Type::variable ) {}
 	};
@@ -148,6 +190,7 @@ namespace nigel
 		AstLiteral() : AstReturning( AstExpr::Type::literal ) {}
 	};
 
+		//A arithmetic block in parentheses
 	class AstParenthesis : public AstReturning
 	{
 	public:
@@ -157,6 +200,116 @@ namespace nigel
 	};
 
 
+		//A base class for boolean expressions which can be resolved to true or false.
+	class AstCondition : public AstExpr
+	{
+	public:
+		AstCondition( AstExpr::Type type ) : AstExpr( type ) {}
+		virtual ~AstCondition() {}
+	};
+
+		//A boolean block in parentheses
+	class AstBooleanParenthesis : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstCondition> content = nullptr;
+
+		AstBooleanParenthesis() : AstCondition( AstExpr::Type::booleanParenthesis ) {}
+	};
+
+		//A construct to constrol the flow of the program
+	class AstIf : public AstExpr
+	{
+	public:
+		std::shared_ptr<AstBooleanParenthesis> condition;
+		std::shared_ptr<AstBlock> ifCase;
+		std::shared_ptr<AstBlock> elseCase;
+
+		AstIf() : AstExpr( AstExpr::Type::ifStat ) {}
+	};
+
+		//A construct to loop a chain of expressioms
+	class AstWhile : public AstExpr
+	{
+	public:
+		std::shared_ptr<AstBooleanParenthesis> condition;
+		std::shared_ptr<AstBlock> block;
+		bool isDoWhile = false;
+
+		AstWhile() : AstExpr( AstExpr::Type::whileStat ) {}
+	};
+
+		//true/false-keyword
+	class AstKeywordCondition : public AstCondition
+	{
+	public:
+		bool val = true;
+
+		AstKeywordCondition() : AstCondition( AstExpr::Type::keywordCondition ) {}
+	};
+
+		//Condition resolved from a arithmetic expression.
+	class AstArithmeticCondition : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstReturning> ret;
+
+		AstArithmeticCondition() : AstCondition( AstExpr::Type::arithmenticCondition ) {}
+	};
+
+		//Boolean comparison
+	class AstComparisonCondition : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstReturning> lVal;
+		std::shared_ptr<AstReturning> rVal;
+		Token::Type op;
+
+		AstComparisonCondition() : AstCondition( AstExpr::Type::comparisonCondition ) {}
+	};
+
+		//Boolean combination
+	class AstCombinationCondition : public AstCondition
+	{
+	public:
+		std::shared_ptr<AstCondition> lVal;
+		std::shared_ptr<AstCondition> rVal;
+		Token::Type op;
+
+		AstCombinationCondition() : AstCondition( AstExpr::Type::combinationCondition ) {}
+	};
+
+
+		//A function definition
+	class AstFunction : public AstExpr
+	{
+	public:
+		String symbol;
+		std::list<VariableBinding> parameters;//All available variables.
+		BasicType retType;
+		std::shared_ptr<AstBlock> content;
+
+		AstFunction() : AstExpr( AstExpr::Type::functionDefinition ) {}
+	};
+
+		//A function call
+	class AstFunctionCall : public AstReturning
+	{
+	public:
+		String symbol;
+		std::list<std::shared_ptr<AstReturning>> parameters;
+
+		AstFunctionCall() : AstReturning( AstExpr::Type::functionCall ) {}
+	};
+
+		//Return statement
+	class AstReturnStatement : public AstExpr
+	{
+	public:
+		std::shared_ptr<AstReturning> expr;
+
+		AstReturnStatement() : AstExpr( AstExpr::Type::returnStat ) {}
+	};
 }
 
 #endif // !NIGEL_AST_EXPR_H
