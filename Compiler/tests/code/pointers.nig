@@ -1,0 +1,11 @@
+byte out;
+
+fn byte main()
+{	
+	byte val = 42;
+	ptr pointer;
+	pointer +=1;
+	
+	out = pointer;
+	
+}

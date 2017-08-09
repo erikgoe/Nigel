@@ -1228,7 +1228,7 @@ namespace nigel
 	void EIR_Parser::generateSetAfterOp( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<Token> lValToken )
 	{
 		if( comb == OC::vv || comb == OC::vc || comb == OC::vt )
-		{//Is the same, because after a operation everything will be located in the acc.
+		{//Is the same, because after a operation the value will be located in the acc.
 			if( lOp->as<EIR_Variable>()->model == MemModel::fast )
 			{
 				addCmd( HexOp::mov_adr_a, lOp );
@@ -1240,8 +1240,9 @@ namespace nigel
 			}
 			else if( lOp->as<EIR_Variable>()->isOnStack() )
 			{
+				addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::SW ) );
 				generateLoadStackR0( lOp );
-				addCmd( HexOp::mov_atr0_a );
+				addCmd( HexOp::mov_atr0_adr, EIR_SFR::getSFR( EIR_SFR::SFR::SW ) );
 			}
 		}
 		else generateNotification( NT::err_cannotSetAConstantLiteral, lValToken );

@@ -88,7 +88,7 @@ namespace nigel
 		}
 		else if( ast->type == AstExpr::Type::booleanParenthesis )
 		{//Print boolean parenthesis block content
-			out = tabs + "<BOOLPAR>";
+			out = tabs + "<BOOLPAN>";
 			log( out );
 			printSubAST( ast->as<AstBooleanParenthesis>()->content, tabCount + 1 );
 		}
@@ -275,7 +275,7 @@ namespace nigel
 	{
 		std::shared_ptr<Token> token = next();
 
-		if( token->type == TT::type_byte )
+		if( token->type == TT::type_byte || token->type == TT::type_ptr )
 		{//Allocation block
 			std::shared_ptr<AstAllocation> newAst = std::make_shared<AstAllocation>();
 			newAst->token = token;
