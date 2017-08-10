@@ -417,13 +417,17 @@ namespace nigel
 			else if( a->rVal->type == AstExpr::Type::term ||
 					 a->rVal->type == AstExpr::Type::unary ||
 					 a->rVal->type == AstExpr::Type::parenthesis ||
-					 a->rVal->type == AstExpr::Type::functionCall )
+					 a->rVal->type == AstExpr::Type::functionCall ||
+					 a->rVal->type == AstExpr::Type::refer ||
+					 a->rVal->type == AstExpr::Type::derefer )
 			{
 				parseAst( a->rVal, varList );
 				if( a->lVal->type == AstExpr::Type::term ||
 					a->lVal->type == AstExpr::Type::unary ||
 					a->lVal->type == AstExpr::Type::parenthesis ||
-					a->lVal->type == AstExpr::Type::functionCall )//push to stack if OC::tt
+					a->lVal->type == AstExpr::Type::functionCall ||
+					a->lVal->type == AstExpr::Type::refer ||
+					a->lVal->type == AstExpr::Type::derefer )//push to stack if OC::tt
 					addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::A ) );
 				else addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
@@ -436,7 +440,9 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
 						 a->rVal->type == AstExpr::Type::parenthesis ||
-						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::vt;
+						 a->rVal->type == AstExpr::Type::functionCall ||
+						 a->rVal->type == AstExpr::Type::refer ||
+						 a->rVal->type == AstExpr::Type::derefer ) comb = OC::vt;
 			}
 			else if( a->lVal->type == AstExpr::Type::literal )
 			{//lValue is a constant
@@ -446,20 +452,27 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
 						 a->rVal->type == AstExpr::Type::parenthesis ||
-						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::ct;
+						 a->rVal->type == AstExpr::Type::functionCall ||
+						 a->rVal->type == AstExpr::Type::refer ||
+						 a->rVal->type == AstExpr::Type::derefer ) comb = OC::ct;
 			}
 			else if( a->lVal->type == AstExpr::Type::term ||
 					 a->lVal->type == AstExpr::Type::unary ||
 					 a->lVal->type == AstExpr::Type::parenthesis ||
-					 a->lVal->type == AstExpr::Type::functionCall )
+					 a->lVal->type == AstExpr::Type::functionCall ||
+					 a->lVal->type == AstExpr::Type::refer ||
+					 a->lVal->type == AstExpr::Type::derefer )
 			{//lValue is a term
+				if( a->lVal->type == AstExpr::Type::derefer ) lOp = std::make_shared<EIR_Operator>( EIR_Operator::Type::derefer );
 				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
 				else if( a->rVal->type == AstExpr::Type::literal ) comb = OC::tc;
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
 						 a->rVal->type == AstExpr::Type::parenthesis ||
-						 a->rVal->type == AstExpr::Type::functionCall )
+						 a->rVal->type == AstExpr::Type::functionCall ||
+						 a->rVal->type == AstExpr::Type::refer ||
+						 a->rVal->type == AstExpr::Type::derefer )
 				{//pop from stack to B
 					comb = OC::tt;
 					addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
@@ -473,7 +486,7 @@ namespace nigel
 				generateSet( comb, lOp, rOp, a->lVal->token, false );
 			}
 			else if( a->op == Token::Type::op_set_get )
-			{// = (The operation is itselve a returning, so it has to copy the value into the acc)
+			{// = (The operation itselve is a returning, so it has to copy the value into the acc)
 				generateSet( comb, lOp, rOp, a->lVal->token, true );
 			}
 			else if( a->op == Token::Type::op_add )
@@ -643,7 +656,9 @@ namespace nigel
 			else if( a->val->type == AstExpr::Type::term ||
 					 a->val->type == AstExpr::Type::parenthesis ||
 					 a->val->type == AstExpr::Type::unary ||
-					 a->val->type == AstExpr::Type::functionCall )
+					 a->val->type == AstExpr::Type::functionCall ||
+					 a->val->type == AstExpr::Type::refer ||
+					 a->val->type == AstExpr::Type::derefer )
 			{
 				ot = OT::t;
 				parseAst( a->val, varList );
@@ -711,7 +726,9 @@ namespace nigel
 			else if( a->content->type == AstExpr::Type::term ||
 					 a->content->type == AstExpr::Type::parenthesis ||
 					 a->content->type == AstExpr::Type::unary ||
-					 a->content->type == AstExpr::Type::functionCall )
+					 a->content->type == AstExpr::Type::functionCall ||
+					 a->content->type == AstExpr::Type::refer ||
+					 a->content->type == AstExpr::Type::derefer )
 			{
 				ot = OT::t;
 				parseAst( a->content, varList );
@@ -833,7 +850,9 @@ namespace nigel
 				else if( p->type == AstExpr::Type::term ||
 						 p->type == AstExpr::Type::parenthesis ||
 						 p->type == AstExpr::Type::unary ||
-						 p->type == AstExpr::Type::functionCall )
+						 p->type == AstExpr::Type::functionCall ||
+						 p->type == AstExpr::Type::refer ||
+						 p->type == AstExpr::Type::derefer )
 				{
 					ot = OT::t;
 					parseAst( p, varList );
@@ -875,7 +894,9 @@ namespace nigel
 			else if( a->expr->type == AstExpr::Type::term ||
 					 a->expr->type == AstExpr::Type::parenthesis ||
 					 a->expr->type == AstExpr::Type::unary ||
-					 a->expr->type == AstExpr::Type::functionCall )
+					 a->expr->type == AstExpr::Type::functionCall ||
+					 a->expr->type == AstExpr::Type::refer ||
+					 a->expr->type == AstExpr::Type::derefer )
 			{
 				ot = OT::t;
 				parseAst( a->expr, varList );
@@ -887,6 +908,57 @@ namespace nigel
 			generateMoveA( ot, op );
 			//addCmd( HexOp::xch_r0_a );todo del
 			addCmd( HexOp::jmp_abs, EIR_Block::getBlockFinish( funcIDs.top() ) );
+		}
+		else if( ast->type == AstExpr::Type::refer )
+		{//Get the address of a variable
+			std::shared_ptr<AstRefer> a = ast->as<AstRefer>();
+			std::shared_ptr<EIR_Operator> op = varList[a->var->name];
+
+			if( a->var->model == MemModel::fast )
+			{
+				addCmd( HexOp::mov_a_const, op );
+			}
+			else if( a->var->model == MemModel::large )
+			{
+				generateNotification( NT::err_cannotGetRefOfLargeGlobal, ast->token );
+			}
+			else if( a->var->model == MemModel::stack ||
+					 a->var->model == MemModel::param )
+			{
+				generateLoadStackR0( op );
+			}
+		}
+		else if( ast->type == AstExpr::Type::derefer )
+		{//Get the value from a address
+			std::shared_ptr<AstDerefer> a = ast->as<AstDerefer>();
+			OperationType ot;//Operator type combination
+			std::shared_ptr<EIR_Operator> op;
+
+			//Memorize val
+			if( a->expr->type == AstExpr::Type::variable )
+			{
+				ot = OT::v;
+				op = varList[a->expr->as<AstVariable>()->name];
+			}
+			else if( a->expr->type == AstExpr::Type::literal )
+			{
+				ot = OT::c;
+				op = EIR_Constant::fromAstLiteral( a->expr->as<AstLiteral>() );
+			}
+			else if( a->expr->type == AstExpr::Type::term ||
+					 a->expr->type == AstExpr::Type::parenthesis ||
+					 a->expr->type == AstExpr::Type::unary ||
+					 a->expr->type == AstExpr::Type::functionCall ||
+					 a->expr->type == AstExpr::Type::refer ||
+					 a->expr->type == AstExpr::Type::derefer )
+			{
+				ot = OT::t;
+				parseAst( a->expr, varList );
+			}
+
+			generateMoveA( ot, op );
+			addCmd( HexOp::mov_r0_a );
+			addCmd( HexOp::mov_a_atr0 );
 		}
 		else if( ast->type != AstExpr::Type::allocation &&
 				 ast->type != AstExpr::Type::variable &&
@@ -926,7 +998,9 @@ namespace nigel
 			else if( ret->type == AstExpr::Type::term ||
 					 ret->type == AstExpr::Type::unary ||
 					 ret->type == AstExpr::Type::parenthesis ||
-					 ret->type == AstExpr::Type::functionCall )
+					 ret->type == AstExpr::Type::functionCall ||
+					 ret->type == AstExpr::Type::refer ||
+					 ret->type == AstExpr::Type::derefer )
 			{
 				ot = OT::t;
 				parseAst( ret, varList );
@@ -948,13 +1022,17 @@ namespace nigel
 			else if( a->rVal->type == AstExpr::Type::term ||
 					 a->rVal->type == AstExpr::Type::unary ||
 					 a->rVal->type == AstExpr::Type::parenthesis ||
-					 a->rVal->type == AstExpr::Type::functionCall )
+					 a->rVal->type == AstExpr::Type::functionCall ||
+					 a->rVal->type == AstExpr::Type::refer ||
+					 a->rVal->type == AstExpr::Type::derefer )
 			{
 				parseAst( a->rVal, varList );
 				if( a->lVal->type == AstExpr::Type::term ||
 					a->lVal->type == AstExpr::Type::unary ||
 					a->lVal->type == AstExpr::Type::parenthesis ||
-					a->lVal->type == AstExpr::Type::functionCall )//push to stack if OC::tt
+					a->lVal->type == AstExpr::Type::functionCall ||
+					a->lVal->type == AstExpr::Type::refer ||
+					a->lVal->type == AstExpr::Type::derefer )//push to stack if OC::tt
 					addCmd( HexOp::push_adr, EIR_SFR::getSFR( EIR_SFR::SFR::A ) );
 				else addCmd( HexOp::mov_adr_a, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
@@ -967,7 +1045,9 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
 						 a->rVal->type == AstExpr::Type::parenthesis ||
-						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::vt;
+						 a->rVal->type == AstExpr::Type::functionCall ||
+						 a->rVal->type == AstExpr::Type::refer ||
+						 a->rVal->type == AstExpr::Type::derefer ) comb = OC::vt;
 			}
 			else if( a->lVal->type == AstExpr::Type::literal )
 			{//lValue is a constant
@@ -977,12 +1057,16 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
 						 a->rVal->type == AstExpr::Type::parenthesis ||
-						 a->rVal->type == AstExpr::Type::functionCall ) comb = OC::ct;
+						 a->rVal->type == AstExpr::Type::functionCall ||
+						 a->rVal->type == AstExpr::Type::refer ||
+						 a->rVal->type == AstExpr::Type::derefer ) comb = OC::ct;
 			}
 			else if( a->lVal->type == AstExpr::Type::term ||
 					 a->lVal->type == AstExpr::Type::unary ||
 					 a->lVal->type == AstExpr::Type::parenthesis ||
-					 a->lVal->type == AstExpr::Type::functionCall )
+					 a->lVal->type == AstExpr::Type::functionCall ||
+					 a->lVal->type == AstExpr::Type::refer ||
+					 a->lVal->type == AstExpr::Type::derefer )
 			{//lValue is a term
 				parseAst( a->lVal, varList );
 				if( a->rVal->type == AstExpr::Type::variable ) comb = OC::tv;
@@ -990,7 +1074,9 @@ namespace nigel
 				else if( a->rVal->type == AstExpr::Type::term ||
 						 a->rVal->type == AstExpr::Type::unary ||
 						 a->rVal->type == AstExpr::Type::parenthesis ||
-						 a->rVal->type == AstExpr::Type::functionCall )
+						 a->rVal->type == AstExpr::Type::functionCall ||
+						 a->rVal->type == AstExpr::Type::refer ||
+						 a->rVal->type == AstExpr::Type::derefer )
 				{//pop from stack to B
 					comb = OC::tt;
 					addCmd( HexOp::pop_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
@@ -1147,7 +1233,7 @@ namespace nigel
 					addCmd( HexOp::mov_a_atr0 );
 					addCmd( HexOp::mov_adr_a, lOp );
 				}
-				else addCmd( HexOp::mov_adr_atr0, rOp );
+				else addCmd( HexOp::mov_adr_atr0, lOp );
 			}
 			else if( lOp->as<EIR_Variable>()->model == MemModel::large &&
 					 rOp->as<EIR_Variable>()->isOnStack() )
@@ -1222,7 +1308,55 @@ namespace nigel
 				else addCmd( HexOp::mov_atr0_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
 			}
 		}
-		else generateNotification( NT::err_cannotSetAConstantLiteral, lValToken );
+		else
+		{
+			if( lOp->type == EIR_Operator::Type::derefer )
+			{//Dereferencing
+				if( comb == OC::tv )
+				{
+					if( rOp->as<EIR_Variable>()->model == MemModel::fast )
+					{
+						if( copyInAcc )
+						{
+							addCmd( HexOp::mov_a_adr, rOp );
+							addCmd( HexOp::mov_atr0_a );
+						}
+						else addCmd( HexOp::mov_atr0_adr, rOp );
+					}
+					else if( rOp->as<EIR_Variable>()->model == MemModel::large )
+					{
+						addCmd( HexOp::mov_dptr_const, rOp );
+						addCmd( HexOp::movx_a_dptr );
+						addCmd( HexOp::mov_atr0_a );
+					}
+					else if( rOp->as<EIR_Variable>()->isOnStack() )
+					{
+						generateLoadStackR1( rOp );
+						addCmd( HexOp::mov_a_atr1 );
+						addCmd( HexOp::mov_atr0_a );
+					}
+				}
+				else if( comb == OC::tc )
+				{
+					if( copyInAcc )
+					{
+						addCmd( HexOp::mov_a_const, rOp );
+						addCmd( HexOp::mov_atr0_a );
+					}
+					else addCmd( HexOp::mov_atr0_const, rOp );
+				}
+				else if( comb == OC::tt )
+				{
+					if( copyInAcc )
+					{
+						addCmd( HexOp::mov_a_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+						addCmd( HexOp::mov_atr0_a );
+					}
+					else addCmd( HexOp::mov_atr0_adr, EIR_SFR::getSFR( EIR_SFR::SFR::B ) );
+				}
+			}
+			else generateNotification( NT::err_cannotSetAConstantLiteral, lValToken );
+		}
 	}
 
 	void EIR_Parser::generateSetAfterOp( OperationCombination comb, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<Token> lValToken )
@@ -1714,7 +1848,7 @@ namespace nigel
 		}
 		addCmd( HexOp::add_a_const, op );
 		addCmd( HexOp::clr_c );//Clear carry because some operations require cleared carry.
-		addCmd( HexOp::xch_a_r0 );
+		addCmd( HexOp::mov_r0_a );
 	}
 
 	void EIR_Parser::generateLoadStackR1( std::shared_ptr<EIR_Operator> op )
@@ -1727,7 +1861,7 @@ namespace nigel
 		}
 		addCmd( HexOp::add_a_const, op );
 		addCmd( HexOp::clr_c );//Clear carry because some operations require cleared carry.
-		addCmd( HexOp::xch_a_r1 );
+		addCmd( HexOp::mov_r0_a );
 	}
 
 	std::shared_ptr<EIR_Command> EIR_Parser::generateCmd( HexOp operation, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp )

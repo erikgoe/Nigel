@@ -34,12 +34,15 @@ namespace nigel
 			functionCall,
 			returnStat,
 
+			refer,
+			derefer,
+
 			count
 		} type;
 
 		std::shared_ptr<Token> token;//Main ast-token
 
-		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall; }
+		bool isTypeReturnable() { return type == Type::variable || type == Type::term || type == Type::unary || type == Type::literal || type == Type::parenthesis || type == Type::functionCall || type == Type::refer || type == Type::derefer; }
 		bool isTypeCondition() { return type == Type::booleanParenthesis || type == Type::keywordCondition || type == Type::arithmenticCondition || type == Type::comparisonCondition || type == Type::combinationCondition; }
 
 		AstExpr( Type type ) : type(type) { }
@@ -310,6 +313,25 @@ namespace nigel
 
 		AstReturnStatement() : AstExpr( AstExpr::Type::returnStat ) {}
 	};
+
+		//Get the address of a variable
+	class AstRefer : public AstReturning
+	{
+	public:
+		std::shared_ptr<AstVariable> var;
+
+		AstRefer() : AstReturning( AstExpr::Type::refer ) {}
+	};
+
+		//Get the address of a variable
+	class AstDerefer : public AstReturning
+	{
+	public:
+		std::shared_ptr<AstReturning> expr;
+
+		AstDerefer() : AstReturning( AstExpr::Type::derefer ) {}
+	};
+
 }
 
 #endif // !NIGEL_AST_EXPR_H

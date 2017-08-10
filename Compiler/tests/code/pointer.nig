@@ -3,9 +3,8 @@ byte out;
 fn byte main()
 {	
 	byte val = 42;
-	ptr pointer;
-	pointer +=1;
+	ptr p = &val;
 	
-	out = pointer;
-	
+	out = *p;
+	*p = 43;
 }
