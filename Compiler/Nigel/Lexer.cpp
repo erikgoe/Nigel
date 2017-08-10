@@ -319,6 +319,11 @@ namespace nigel
 					tmp = std::make_shared<Token>( Token::Type::norm_attr );
 					token->swap( tmp );
 				}
+				else if( identifier == "ptr" )
+				{
+					tmp = std::make_shared<Token>( Token::Type::type_ptr );
+					token->swap( tmp );
+				}
 				else if( identifier == "if" )
 				{
 					tmp = std::make_shared<Token>( Token::Type::cf_if );

@@ -1,0 +1,10 @@
+byte out;
+
+fn byte main()
+{	
+	byte val = 42;
+	ptr p = &val;
+	
+	out = *p;
+	*p = 43;
+}

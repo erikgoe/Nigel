@@ -166,6 +166,10 @@ namespace nigel
 		notificationTexts[NT::err_returnHasToBeInTheOuterScope] = "The return statement has to be in the outer scope of a function.";
 		notificationTexts[NT::err_notFoundMatchingFunctionDeclaration] = "Did not found a matching function for this call. The parameter types do not match.";
 
+		notificationTexts[NT::err_expectedVariableForReference] = "Expected variable to refer to.";
+		notificationTexts[NT::err_expectedVariableForDeferencing] = "Expected pointer to dereference.";
+		notificationTexts[NT::err_cannotGetRefOfLargeGlobal] = "Can't get the address of a large global. User the attribute 'fast' in the variable declaration.";
+
 		notificationTexts[NT::err_unknownASTExpr] = "Unknown expression found.";
 		notificationTexts[NT::err_cannotBreakAtThisPosition] = "Can't break out of this or outer scope.";
 

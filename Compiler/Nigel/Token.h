@@ -22,6 +22,7 @@ namespace nigel
 			unsigned_attr,
 			fast_attr,
 			norm_attr,
+			type_ptr,
 			cf_if,
 			cf_else,
 			cf_while,

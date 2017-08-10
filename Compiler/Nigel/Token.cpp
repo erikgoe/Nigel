@@ -13,6 +13,7 @@ namespace nigel
 		else if( type == Token::Type::unsigned_attr ) return "unsigned";
 		else if( type == Token::Type::fast_attr ) return "fast";
 		else if( type == Token::Type::norm_attr ) return "norm";
+		else if( type == Token::Type::type_ptr ) return "ptr";
 		else if( type == Token::Type::cf_if ) return "if";
 		else if( type == Token::Type::cf_else ) return "else";
 		else if( type == Token::Type::cf_while ) return "while";

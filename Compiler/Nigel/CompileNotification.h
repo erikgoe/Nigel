@@ -101,6 +101,10 @@ namespace nigel
 			err_returnHasToBeInTheOuterScope,
 			err_notFoundMatchingFunctionDeclaration,
 
+			err_expectedVariableForReference,
+			err_expectedVariableForDeferencing,
+			err_cannotGetRefOfLargeGlobal,
+
 			err_unknownASTExpr,
 			err_cannotBreakAtThisPosition,
 

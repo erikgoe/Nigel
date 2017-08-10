@@ -88,7 +88,7 @@ namespace nigel
 		}
 		else if( ast->type == AstExpr::Type::booleanParenthesis )
 		{//Print boolean parenthesis block content
-			out = tabs + "<BOOLPAR>";
+			out = tabs + "<BOOLPAN>";
 			log( out );
 			printSubAST( ast->as<AstBooleanParenthesis>()->content, tabCount + 1 );
 		}
@@ -177,6 +177,20 @@ namespace nigel
 		{//Return statement
 			auto r = ast->as<AstReturnStatement>();
 			out = tabs + "<RET>";
+			log( out );
+			printSubAST( r->expr, tabCount + 1 );
+		}
+		else if( ast->type == AstExpr::Type::refer )
+		{//Referencing
+			auto r = ast->as<AstRefer>();
+			out = tabs + "<REF>";
+			log( out );
+			printSubAST( r->var, tabCount + 1 );
+		}
+		else if( ast->type == AstExpr::Type::derefer )
+		{//Dereferencing
+			auto r = ast->as<AstDerefer>();
+			out = tabs + "<DEREF>";
 			log( out );
 			printSubAST( r->expr, tabCount + 1 );
 		}
@@ -275,7 +289,7 @@ namespace nigel
 	{
 		std::shared_ptr<Token> token = next();
 
-		if( token->type == TT::type_byte )
+		if( token->type == TT::type_byte || token->type == TT::type_ptr )
 		{//Allocation block
 			std::shared_ptr<AstAllocation> newAst = std::make_shared<AstAllocation>();
 			newAst->token = token;
@@ -548,8 +562,50 @@ namespace nigel
 			}
 			else
 			{//Not global
-				if( token->type == TT::op_inc || token->type == TT::op_dec ||
-					( expectValue && ( token->type == TT::op_inv || token->type == TT::op_sub || token->type == TT::op_add || token->type == TT::op_not ) ) )
+				if( ( expectValue || lValue == nullptr ) && ( token->type == TT::op_and || token->type == TT::op_mul ) )
+				{//Refer/derefer
+					if( token->type == TT::op_and )
+					{//Refer
+						std::shared_ptr<AstRefer> newAst = std::make_shared<AstRefer>();
+						newAst->token = token;
+
+						expectValue = true;
+						std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+						if( nextAst == nullptr || nextAst->type != AstExpr::Type::variable )
+						{//no variable
+							generateNotification( NT::err_expectedVariableForReference, currToken );
+							expectValue = false;
+							ignoreExpr();
+						}
+
+						newAst->var = nextAst->as<AstVariable>();
+						newAst->retType = newAst->var->retType;
+						lValue = newAst;
+					}
+					else if( token->type == TT::op_mul )
+					{//Derefer
+						std::shared_ptr<AstDerefer> newAst = std::make_shared<AstDerefer>();
+						newAst->token = token;
+
+						expectValue = true;
+						std::shared_ptr<AstExpr> nextAst = resolveNextExpr();
+						if( nextAst == nullptr || !nextAst->isTypeReturnable() )
+						{//no variable
+							generateNotification( NT::err_expectedVariableForReference, currToken );
+							expectValue = false;
+							ignoreExpr();
+						}
+
+						newAst->expr = nextAst->as<AstReturning>();
+						newAst->retType = newAst->expr->retType;
+						lValue = newAst;
+					}
+
+					expectValue = false;
+					return lValue;
+				}
+				else if( token->type == TT::op_inc || token->type == TT::op_dec ||
+					( ( expectValue || lValue == nullptr ) && ( token->type == TT::op_inv || token->type == TT::op_sub || token->type == TT::op_add || token->type == TT::op_not ) ) )
 				{//Unary
 					std::shared_ptr<AstUnary> newAst = std::make_shared<AstUnary>();
 					newAst->token = token;
@@ -1102,7 +1158,7 @@ namespace nigel
 				}
 
 				auto retType = next();
-				if( retType->type == TT::type_byte ) newAst->retType = BasicType::tByte;
+				if( retType->type == TT::type_byte || retType->type == TT::type_ptr ) newAst->retType = BasicType::tByte;
 				else if( retType->type == TT::type_int ) newAst->retType = BasicType::tInt;
 				else
 				{
@@ -1120,7 +1176,7 @@ namespace nigel
 					return nullptr;
 				}
 				newAst->symbol += funcName;
-				
+
 				//Loop all parameter variables
 				if( next()->type != TT::tok_parenthesis_open )
 				{

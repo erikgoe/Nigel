@@ -104,6 +104,7 @@ namespace nigel
 			sfr,//Special function register
 			block,//Block id
 			condition,//Condition jmp
+			derefer,//Dereferencing
 
 			count
 		} type;
