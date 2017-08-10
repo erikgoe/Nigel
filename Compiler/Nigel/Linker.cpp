@@ -515,7 +515,7 @@ namespace nigel
 		fileStr += ":00000001FF";
 
 
-		std::basic_ofstream<u8> filestream( file.string(), std::ios_base::binary );
+		std::ofstream filestream( file.string(), std::ios_base::binary );
 
 		if( filestream )
 		{
