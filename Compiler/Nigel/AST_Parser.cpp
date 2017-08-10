@@ -46,6 +46,10 @@ namespace nigel
 				out += "\n " + tabs + "<VAR_D> " + v.first;
 			}
 			log( out );
+			for( auto n : ast->as<AstBlock>()->content )
+			{
+				printSubAST( n, tabCount + 1 );
+			}
 		}
 		else if( ast->type == AstExpr::Type::variable )
 		{//Print variable content
@@ -195,14 +199,11 @@ namespace nigel
 			printSubAST( r->expr, tabCount + 1 );
 		}
 
-
-		if( ast->type == AstExpr::Type::block )
-		{
-			for( auto n : ast->as<AstBlock>()->content )
-			{
-				printSubAST( n, tabCount + 1 );
-			}
+		else
+		{//Unknown ast
+			log( tabs + "-!-UNKNOWN-!-" );
 		}
+
 	}
 
 	AST_Parser::AST_Parser()
@@ -500,6 +501,7 @@ namespace nigel
 							ast->parameters.push_back( lValue->as<AstReturning>() );
 							ast->symbol += "@" + lValue->as<AstReturning>()->returnTypeString();
 							expectValue = true;
+							lValue = nullptr;
 
 							if( openParenthesisCount == 0 ) break;
 							else if( nextAst == nullptr ) continue;//comma
@@ -515,6 +517,7 @@ namespace nigel
 						lValue = nextAst;
 
 					}
+					expectValue = false;
 
 					if( functions[identifier].find( ast->symbol ) == functions[identifier].end() )
 					{
