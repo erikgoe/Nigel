@@ -1,27 +1,25 @@
 # Nigel
 The Nigel programming language
-/work in progress.../
 
 ## What is it?
 Nigel is a new programming language for the 8051 microcontroller, with a c-like syntax.
 
 ## Goals
-* Complete compiler from source code to hex files.
-* Resolve all possible expressions
-* Functions (of course with a stack)
-* Controll flow (if, while, etc.)
-* Pointers (including dynamic heap)
-* arrays
-* string literals?
-* Handling interrupts/timer and other 8051-specific stuff
-* Intern/extern RAM
-* 16+ bit types
-* Compiling of multiple files (with a linker).
-* Preprocessor (and header files)
-* Standard library
-* Local variables in sub-blocks
-* Compile the compiler on linux (clang/gcc)
-* Optimizing code?
+- [x] Complete compilation from source code to hex files.
+- [x] Resolve possible expressions
+- [x] Functions
+- [x] Controll flow (if, while, etc.)
+- [x] Pointers
+- [x] Intern/extern RAM
+- [x] Preprocessor
+- [x] Compile the compiler on linux (clang/gcc)
+- [x] Interrupts
+- [ ] 8051-specific stuff (ports, timer, etc.)
+
+## Nice to have
+* arrays (can be emulated with a pointer)
+* string literals
+* optimizing code
 
 ## How does it work?
 The Compiler is divided into these parts:
@@ -71,7 +69,6 @@ The Compiler is divided into these parts:
 The resulting Hex code can be uploaded onto a 8051 microcontroller or be interpreted in a simulator.
 
 ### Next development steps
-* ptr
 * new, delete (dynamic memory)
 * 'Magic addresses' of the microcontroller (ports, etc.)
 * std-library
