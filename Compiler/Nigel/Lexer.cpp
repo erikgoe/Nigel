@@ -22,7 +22,7 @@ namespace nigel
 		return c == '$' || c == '#' || c == '"' || c == '\'' ||
 			c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
 			c == ',' || c == '.' || c == ':' || c == ';' ||
-			c == '?' || c == '@' || c == '\\' || c == '`';
+			c == '?' || c == '\\' || c == '`';
 	}
 	bool Lexer::isIdentifier( char c )
 	{
@@ -220,7 +220,7 @@ namespace nigel
 			}
 			else if( isNumber( c ) || ( c == 'x' && tmpStr == "0" ) )
 			{
-				if( tmpStr.empty() || isNumber( previousC ) || isIdentifier( tmpStr.front() ) || previousC == '0' ||
+				if( tmpStr.empty() || isNumber( previousC ) || isIdentifier( tmpStr.front() ) || previousC == '0' || tmpStr == "0x" ||
 					( ( tmpStr == "-" || tmpStr == "+" ) && ( base.lexerStruct.empty() || base.lexerStruct.back()->type == Token::Type::operatorToken || base.lexerStruct.back()->type == Token::Type::dividingToken ) )
 					) tmpStr += c;
 				else if( !tmpStr.empty() )

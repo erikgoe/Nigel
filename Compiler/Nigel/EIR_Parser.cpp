@@ -291,6 +291,7 @@ namespace nigel
 		{//Add all variables of the global block.
 			varList[v.first.first] = EIR_Variable::getNew( sizeOfType( v.first.second->retType ) );
 			varList[v.first.first]->model = v.first.second->model;
+			varList[v.first.first]->address = static_cast< u16 >( v.first.second->predefinedAddress );
 			base.eirValues[varList[v.first.first]->id] = varList[v.first.first];
 		}
 		for( auto &a : base.globalAst->content )

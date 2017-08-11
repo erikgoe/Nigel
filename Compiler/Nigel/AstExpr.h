@@ -134,6 +134,7 @@ namespace nigel
 		MemModel model = MemModel::large;
 		String name;
 		size_t scopeOffset = 0;//Offset of outer scope. Will be used in MemModel::stack.
+		u8 predefinedAddress = 0;//Used for SFRs
 
 		String modelString()
 		{
@@ -146,6 +147,13 @@ namespace nigel
 		}
 
 		AstVariable() : AstReturning( AstExpr::Type::variable ) {}
+		AstVariable( MemModel model, String name, u8 address, BasicType type ) : AstReturning( AstExpr::Type::variable )
+		{
+			this->model = model;
+			this->name = name;
+			predefinedAddress = address;
+			retType = type;
+		}
 	};
 
 		//Term expression

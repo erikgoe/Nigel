@@ -49,7 +49,7 @@ namespace nigel
 
 			for( auto &v : base.eirValues )
 			{
-				if( v.second->model == MemModel::fast && !onlyNormal )
+				if( v.second->model == MemModel::fast && !onlyNormal && v.second->address == 0 )
 				{
 					if( ( fastAdr - v.second->size / 8 ) < 0x20 )
 					{
