@@ -1,0 +1,7 @@
+byte out;
+
+fn byte main()
+{	
+	@P1 = 42;
+	out = @P1;
+}

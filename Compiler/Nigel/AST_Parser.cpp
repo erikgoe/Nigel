@@ -206,6 +206,25 @@ namespace nigel
 
 	}
 
+	void AST_Parser::fillSFR( std::shared_ptr<AstBlock> block )
+	{
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@P0", std::make_shared<AstVariable>( MemModel::fast, "@P0", 0x80, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@P1", std::make_shared<AstVariable>( MemModel::fast, "@P1", 0x90, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@P2", std::make_shared<AstVariable>( MemModel::fast, "@P2", 0xA0, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@P3", std::make_shared<AstVariable>( MemModel::fast, "@P3", 0xB0, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@TL0", std::make_shared<AstVariable>( MemModel::fast, "@TL0", 0x8A, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@TH0", std::make_shared<AstVariable>( MemModel::fast, "@TH0", 0x8B, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@TL1", std::make_shared<AstVariable>( MemModel::fast, "@TL1", 0x8C, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@TH1", std::make_shared<AstVariable>( MemModel::fast, "@TH1", 0x8D, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@TMOD", std::make_shared<AstVariable>( MemModel::fast, "@TMOD", 0x89, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@TCON", std::make_shared<AstVariable>( MemModel::fast, "@TCON", 0x88, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@IP", std::make_shared<AstVariable>( MemModel::fast, "@IP", 0xB8, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@IE", std::make_shared<AstVariable>( MemModel::fast, "@IE", 0xA8, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@PCON", std::make_shared<AstVariable>( MemModel::fast, "@PCON", 0x87, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@SCON", std::make_shared<AstVariable>( MemModel::fast, "@SCON", 0x98, BasicType::tByte ) ), 0 ) );
+		block->variables.push_back( std::pair<VariableBinding, size_t>( VariableBinding( "@SBUF", std::make_shared<AstVariable>( MemModel::fast, "@SBUF", 0x99, BasicType::tByte ) ), 0 ) );
+	}
+
 	AST_Parser::AST_Parser()
 	{
 		//Add the priority to operators.
@@ -264,7 +283,7 @@ namespace nigel
 		this->base = &base;
 
 		base.globalAst = std::make_shared<AstBlock>();
-		base.globalAst->name = "";
+		fillSFR( base.globalAst );
 		blockStack.push( base.globalAst );
 
 		finishedParsing = false;

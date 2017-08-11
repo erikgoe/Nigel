@@ -67,7 +67,6 @@ namespace nigel
 		static u32 nextID;//Enables creation of new variables.
 
 	public:
-		String name;//Block name todo check if needed
 		u32 id;//Unique id for this block.
 		std::list<std::shared_ptr<AstExpr>> content;
 		std::list<std::pair<VariableBinding, size_t>> variables;//All available variables. Bindings mapped to their relative scope offset.
@@ -134,6 +133,7 @@ namespace nigel
 		MemModel model = MemModel::large;
 		String name;
 		size_t scopeOffset = 0;//Offset of outer scope. Will be used in MemModel::stack.
+		u8 predefinedAddress = 0;//Used for SFRs
 
 		String modelString()
 		{
@@ -146,6 +146,13 @@ namespace nigel
 		}
 
 		AstVariable() : AstReturning( AstExpr::Type::variable ) {}
+		AstVariable( MemModel model, String name, u8 address, BasicType type ) : AstReturning( AstExpr::Type::variable )
+		{
+			this->model = model;
+			this->name = name;
+			predefinedAddress = address;
+			retType = type;
+		}
 	};
 
 		//Term expression

@@ -1,15 +1,17 @@
-//Calculates the fibonacci numbers up to 233. The output will be saved in the first register of the ram
+//Calculates the fibonacci sequence up to 233. The output will be saved in the internal ram (adr. 0x80+).
 
 fn byte main()
 {
 	byte a = 0;
 	byte b = 1;
-	byte output;
+	ptr out = 0x80;
+	*out = b;
 	
-	while( output < 233 )
+	while( *out < 233 )
 	{
-		output = a+b;
+		out++;
+		*out = a+b;
 		a = b;
-		b = output;
+		b = *out;
 	}
 }

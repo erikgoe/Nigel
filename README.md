@@ -14,7 +14,7 @@ Nigel is a new programming language for the 8051 microcontroller, with a c-like 
 - [x] Preprocessor
 - [x] Compile the compiler on linux (clang/gcc)
 - [x] Interrupts
-- [ ] 8051-specific stuff (ports, timer, etc.)
+- [x] 8051-specific stuff (ports, timer, etc.)
 
 ## Nice to have
 * arrays (can be emulated with a pointer)

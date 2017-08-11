@@ -1,19 +1,21 @@
-#include "stdnigel.ngl"
-#define u8 byte
+#include "stdnigel.nigh"
 
 fn byte main() {
 	byte a = -2;
 	byte b = 7;
 	
-	byte _sum, _avg;
-	_sum = a+b;//Add a to b
-	outp1(sum);
+	u8 sum;
+	u8 avg;
+	sum = a+b;//Add a to b
+	outp0(sum);
 	
-	if( _sum % 2 == 0 ) {
-		_avg=_sum /2;/*Calculate the average /*nested comment*/ value*/
-		outp2(_avg);
+	if( sum % 2 == 0 ) {
+		avg=sum /2;/*Calculate the average /*nested comment*/ value*/
+		outp2(avg);
 	}
-	else outp2(0);
+	else {
+		outp2(0);
+	}
 	
 	return 0;
 }

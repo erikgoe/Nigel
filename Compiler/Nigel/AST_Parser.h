@@ -42,6 +42,9 @@ namespace nigel
 		void printAST( CodeBase &base );
 		void printSubAST( std::shared_ptr<AstExpr> ast, size_t tabCount );
 
+			//Add sfr-addresses as variables to the variables list
+		void fillSFR( std::shared_ptr<AstBlock> block );
+
 	public:
 		AST_Parser();
 

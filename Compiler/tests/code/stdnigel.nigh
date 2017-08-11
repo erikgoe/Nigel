@@ -1,0 +1,10 @@
+#define u8 byte
+
+fn byte outp0( byte val )
+{
+	@P0 = val;
+}
+fn byte outp2( byte val )
+{
+	@P2 = val;
+}

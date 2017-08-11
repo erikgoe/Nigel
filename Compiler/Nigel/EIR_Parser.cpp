@@ -164,6 +164,9 @@ namespace nigel
 				else if( c->operation == HexOp::mov_r0_const )		out += "MOV R0, " + operatorToString( c->op1 );
 				else if( c->operation == HexOp::mov_r0_a )			out += "MOV R0, A";
 				else if( c->operation == HexOp::mov_r0_adr )		out += "MOV R0, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_r1_const )		out += "MOV R1, " + operatorToString( c->op1 );
+				else if( c->operation == HexOp::mov_r1_a )			out += "MOV R1, A";
+				else if( c->operation == HexOp::mov_r1_adr )		out += "MOV R1, " + operatorToString( c->op1 );
 				else if( c->operation == HexOp::mov_atr0_const )	out += "MOV @R0, " + operatorToString( c->op1 );
 				else if( c->operation == HexOp::mov_atr0_a )		out += "MOV @R0, A";
 				else if( c->operation == HexOp::mov_atr1_a )		out += "MOV @R1, A";
@@ -291,6 +294,7 @@ namespace nigel
 		{//Add all variables of the global block.
 			varList[v.first.first] = EIR_Variable::getNew( sizeOfType( v.first.second->retType ) );
 			varList[v.first.first]->model = v.first.second->model;
+			varList[v.first.first]->address = static_cast< u16 >( v.first.second->predefinedAddress );
 			base.eirValues[varList[v.first.first]->id] = varList[v.first.first];
 		}
 		for( auto &a : base.globalAst->content )
@@ -906,7 +910,6 @@ namespace nigel
 				generateNotification( NT::err_returnHasToBeInTheOuterScope, ast->token );
 
 			generateMoveA( ot, op );
-			//addCmd( HexOp::xch_r0_a );todo del
 			addCmd( HexOp::jmp_abs, EIR_Block::getBlockFinish( funcIDs.top() ) );
 		}
 		else if( ast->type == AstExpr::Type::refer )
@@ -1861,7 +1864,7 @@ namespace nigel
 		}
 		addCmd( HexOp::add_a_const, op );
 		addCmd( HexOp::clr_c );//Clear carry because some operations require cleared carry.
-		addCmd( HexOp::mov_r0_a );
+		addCmd( HexOp::mov_r1_a );
 	}
 
 	std::shared_ptr<EIR_Command> EIR_Parser::generateCmd( HexOp operation, std::shared_ptr<EIR_Operator> lOp, std::shared_ptr<EIR_Operator> rOp )
