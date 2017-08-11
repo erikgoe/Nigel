@@ -907,7 +907,6 @@ namespace nigel
 				generateNotification( NT::err_returnHasToBeInTheOuterScope, ast->token );
 
 			generateMoveA( ot, op );
-			//addCmd( HexOp::xch_r0_a );todo del
 			addCmd( HexOp::jmp_abs, EIR_Block::getBlockFinish( funcIDs.top() ) );
 		}
 		else if( ast->type == AstExpr::Type::refer )

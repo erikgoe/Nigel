@@ -158,8 +158,7 @@ namespace nigel
 		notificationTexts[NT::err_unknownTokenAfterFunctionParameter] = "Unknown token after function parameter.";
 		notificationTexts[NT::err_expectedBlockAfterFunctionHead] = "Expected block after function head.";
 		notificationTexts[NT::err_functionIdentifierAlreadyAssigned] = "This identifier was already assigned.";
-		//todo write all notifications
-		//notificationTexts[NT::err_expectedIdentifier_atFunctionCall] = "Expected identifier at function call.";
+		notificationTexts[NT::err_expectedReturningExpression_atFunctionCall] = "Expected retunable at function call.";
 		notificationTexts[NT::err_expectedOpeningParenthesis_atFunctionCall] = "Expected opening parenthesis at function call.";
 		notificationTexts[NT::err_unknownTypeAtFunctionCallParameter] = "Unknown type at function call parameter.";
 		notificationTexts[NT::err_expectedReturningExpression_AtReturn] = "Expected retunable at return statement.";

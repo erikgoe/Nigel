@@ -67,7 +67,6 @@ namespace nigel
 		static u32 nextID;//Enables creation of new variables.
 
 	public:
-		String name;//Block name todo check if needed
 		u32 id;//Unique id for this block.
 		std::list<std::shared_ptr<AstExpr>> content;
 		std::list<std::pair<VariableBinding, size_t>> variables;//All available variables. Bindings mapped to their relative scope offset.

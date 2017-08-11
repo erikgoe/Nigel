@@ -283,7 +283,6 @@ namespace nigel
 		this->base = &base;
 
 		base.globalAst = std::make_shared<AstBlock>();
-		base.globalAst->name = "";
 		fillSFR( base.globalAst );
 		blockStack.push( base.globalAst );
 
