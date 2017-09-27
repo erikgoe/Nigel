@@ -70,7 +70,7 @@ The resulting Hex code can be uploaded onto a 8051 microcontroller or be interpr
 
 ### Next development steps
 * new, delete (dynamic memory)
-* 'Magic addresses' of the microcontroller (ports, etc.)
+
 * std-library
 
 ## Getting started
