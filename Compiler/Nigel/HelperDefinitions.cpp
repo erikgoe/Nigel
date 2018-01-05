@@ -33,7 +33,7 @@ namespace helper
 
 
 
-	#if (_MSC_VER >= 1900 && _MSC_VER <= 1911) //bug-workaround (VC_2015+)
+	#if (_MSC_VER >= 1900 && _MSC_VER <= 2000) //bug-workaround (VC_2015+)
 
 		String8 to_utf8( const String16 &str )
 		{
