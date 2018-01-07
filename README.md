@@ -76,14 +76,12 @@ The resulting Hex code can be uploaded onto a 8051 microcontroller or be interpr
 ## Getting started
 ### Building
 #### On Windows
-_Note: CMake is not testet on windows, but may work however._
-
 Pre-generated solution:
 1. Install Visual Studio (tested with VC 2017).
 2. Install the boost library:
     1. Download the library from http://www.boost.org/ and add it to the project dependencies (make sure filesystem and system are compiled)
     2. __or__ use vcpkg (https://github.com/Microsoft/vcpkg/) and install boost with 
-       ```<vcpkg_install_dir>\vcpkg install boost```.
+       ```<vcpkg_install_dir>\vcpkg install boost-filesystem boost-system```.
        This might be the easier way.
 3. Clone this repository.
 4. Open Compiler\Nigel.sln, compile and hope for the best.
@@ -92,7 +90,7 @@ The output binaries will be in Nigel\Compiler\Release\ or Nigel\Compiler\Debug\ 
 CMake (static build):
 1. Install cmake
 2. Install the boost library with vcpkg as above
-use ```<vcpkg_install_dir>\vcpkg install --triplet x86-windows-static boost``` for static build
+use ```<vcpkg_install_dir>\vcpkg install --triplet x86-windows-static boost-filesystem boost-system``` for static build
 3. Clone this repository.
 4. create the project
 ```
