@@ -1,0 +1,15 @@
+byte a;
+byte c;
+
+fn byte main()
+{
+	a = 10;
+	byte b = 42;
+	
+	
+	c = 4;
+	if( c > 3 )
+	{
+		b = a;
+ 	}
+}
