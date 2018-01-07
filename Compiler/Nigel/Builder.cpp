@@ -4,7 +4,7 @@
 #include "Preprocessor.h"
 #include "Lexer.h"
 #include "AST_Parser.h"
-#include "EIR_Parser.h"
+#include "IMC_Generator.h"
 #include "Linker.h"
 
 namespace nigel
@@ -27,7 +27,7 @@ namespace nigel
 			e.push_back( std::make_shared<Preprocessor>() );
 			e.push_back( std::make_shared<Lexer>() );
 			e.push_back( std::make_shared<AST_Parser>() );
-			e.push_back( std::make_shared<EIR_Parser>() );
+			e.push_back( std::make_shared<IMC_Generator>() );
 			e.push_back( std::make_shared<Linker>() );
 			builderTasks["build"] = std::make_shared<BuilderTask>( "Builder", "Creates a hex file from a soucecode file.", "build [-b] [--pl] [--pa] [--pe] [--pasm] --c [sourcePath] --o [destinationPath]", e );
 		}
@@ -112,7 +112,7 @@ namespace nigel
 					log( "   destinationPath        File to write to." );
 					log( "   pl                     Print lexer structure." );
 					log( "   pa                     Print AST." );
-					log( "   pe                     Print EIR." );
+					log( "   pi                     Print IMC." );
 					log( "   pasm                   Print assembly code." );
 					log( "   b                      Pause if an error occurred." );
 				}

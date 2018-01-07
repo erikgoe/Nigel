@@ -150,8 +150,8 @@
     <ClInclude Include="BuilderTask.h" />
     <ClInclude Include="CodeBase.h" />
     <ClInclude Include="CompileNotification.h" />
-    <ClInclude Include="EIR_Command.h" />
-    <ClInclude Include="EIR_Parser.h" />
+    <ClInclude Include="IM_Command.h" />
+    <ClInclude Include="IM_Parser.h" />
     <ClInclude Include="HelperDefinitions.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Linker.h" />
@@ -165,7 +165,7 @@
     <ClCompile Include="Builder.cpp" />
     <ClCompile Include="BuilderTask.cpp" />
     <ClCompile Include="CodeBase.cpp" />
-    <ClCompile Include="EIR_Parser.cpp" />
+    <ClCompile Include="IM_Parser.cpp" />
     <ClCompile Include="HelperDefinitions.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Linker.cpp" />

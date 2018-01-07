@@ -57,10 +57,10 @@
     <ClInclude Include="CompileNotification.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="EIR_Parser.h">
+    <ClInclude Include="IM_Parser.h">
       <Filter>Headerdateien\executables</Filter>
     </ClInclude>
-    <ClInclude Include="EIR_Command.h">
+    <ClInclude Include="IM_Command.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="Linker.h">
@@ -98,7 +98,7 @@
     <ClCompile Include="Token.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="EIR_Parser.cpp">
+    <ClCompile Include="IM_Parser.cpp">
       <Filter>Quelldateien\executables</Filter>
     </ClCompile>
     <ClCompile Include="Linker.cpp">

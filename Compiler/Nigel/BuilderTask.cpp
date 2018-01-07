@@ -206,7 +206,7 @@ namespace nigel
 
 		if( parameters.find( "pl" ) != parameters.end() ) codeBase.printLexer = true;
 		if( parameters.find( "pa" ) != parameters.end() ) codeBase.printAST = true;
-		if( parameters.find( "pe" ) != parameters.end() ) codeBase.printEIR = true;
+		if( parameters.find( "pi" ) != parameters.end() ) codeBase.printIMC = true;
 		if( parameters.find( "pasm" ) != parameters.end() ) codeBase.printAssembly = true;
 
 		std::list<std::shared_ptr<CompileNotification>> notificationList;

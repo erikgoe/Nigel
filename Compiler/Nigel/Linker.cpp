@@ -47,7 +47,7 @@ namespace nigel
 			u16 largeAdr = 0;
 			bool onlyNormal = false;
 
-			for( auto &v : base.eirValues )
+			for( auto &v : base.imValues )
 			{
 				if( v.second->model == MemModel::fast && !onlyNormal && v.second->address == 0 )
 				{
@@ -71,20 +71,20 @@ namespace nigel
 		}
 
 		//Write code to hex buffer
-		for( auto c : base.eirCommands )
+		for( auto c : base.imCommands )
 		{
-			if( c->type == EIR_Command::Type::operation )
+			if( c->type == IM_Command::Type::operation )
 			{//Is a regular command
 				base.hexBuffer.push_back( static_cast< u8 >( c->operation ) );
 				if( c->op1 != nullptr )
 				{
-					if( c->op1->type == EIR_Operator::Type::constant )
+					if( c->op1->type == IM_Operator::Type::constant )
 					{//Write constant
-						base.hexBuffer.push_back( c->op1->as<EIR_Constant>()->data );
+						base.hexBuffer.push_back( c->op1->as<IM_Constant>()->data );
 					}
-					else if( c->op1->type == EIR_Operator::Type::variable )
+					else if( c->op1->type == IM_Operator::Type::variable )
 					{//Write variable
-						auto op = c->op1->as<EIR_Variable>();
+						auto op = c->op1->as<IM_Variable>();
 						if( op->model == MemModel::fast )
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						else if( op->model == MemModel::large )
@@ -97,13 +97,13 @@ namespace nigel
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						}
 					}
-					else if( c->op1->type == EIR_Operator::Type::sfr )
+					else if( c->op1->type == IM_Operator::Type::sfr )
 					{//Write sfr register
-						base.hexBuffer.push_back( c->op1->as<EIR_SFR>()->address );
+						base.hexBuffer.push_back( c->op1->as<IM_SFR>()->address );
 					}
-					else if( c->op1->type == EIR_Operator::Type::block )
+					else if( c->op1->type == IM_Operator::Type::block )
 					{//Write the address of a block or put into waiting queue
-						auto op = c->op1->as<EIR_Block>();
+						auto op = c->op1->as<IM_Block>();
 						if( op->begin )
 						{//To block begin
 							if( op->symbol != "" )
@@ -167,9 +167,9 @@ namespace nigel
 							}
 						}
 					}
-					else if( c->op1->type == EIR_Operator::Type::condition )
+					else if( c->op1->type == IM_Operator::Type::condition )
 					{//Write the address of a condition jmp
-						auto op = c->op1->as<EIR_Condition>();
+						auto op = c->op1->as<IM_Condition>();
 
 						if( op->isTrue )
 						{//To condition true position
@@ -203,13 +203,13 @@ namespace nigel
 				}
 				if( c->op2 != nullptr )
 				{
-					if( c->op2->type == EIR_Operator::Type::constant )
+					if( c->op2->type == IM_Operator::Type::constant )
 					{//Write constant
-						base.hexBuffer.push_back( c->op2->as<EIR_Constant>()->data );
+						base.hexBuffer.push_back( c->op2->as<IM_Constant>()->data );
 					}
-					else if( c->op2->type == EIR_Operator::Type::variable )
+					else if( c->op2->type == IM_Operator::Type::variable )
 					{//Write variable
-						auto op = c->op2->as<EIR_Variable>();
+						auto op = c->op2->as<IM_Variable>();
 						if( op->model == MemModel::fast )
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						else if( op->model == MemModel::large )
@@ -222,13 +222,13 @@ namespace nigel
 							base.hexBuffer.push_back( static_cast< u8 >( op->address ) );
 						}
 					}
-					else if( c->op2->type == EIR_Operator::Type::sfr )
+					else if( c->op2->type == IM_Operator::Type::sfr )
 					{//Write sfr register
-						base.hexBuffer.push_back( c->op2->as<EIR_SFR>()->address );
+						base.hexBuffer.push_back( c->op2->as<IM_SFR>()->address );
 					}
-					else if( c->op2->type == EIR_Operator::Type::block )
+					else if( c->op2->type == IM_Operator::Type::block )
 					{//Write the address of a block or put into waiting queue
-						auto op = c->op2->as<EIR_Block>();
+						auto op = c->op2->as<IM_Block>();
 						if( op->begin )
 						{//To block begin
 							if( blockBeginAddresses.find( op->blockID ) == blockBeginAddresses.end() )
@@ -275,17 +275,17 @@ namespace nigel
 							}
 						}
 					}
-					else if( c->op2->type == EIR_Operator::Type::condition )
+					else if( c->op2->type == IM_Operator::Type::condition )
 					{//Write the address of a condition jmp
-						if( !c->op2->as<EIR_Condition>()->isTrue )
-							missingConditionEnds_false[c->op2->as<EIR_Condition>()->conditionID] = static_cast< u16 >( base.hexBuffer.size() );
-						else missingConditionEnds_true[c->op2->as<EIR_Condition>()->conditionID] = static_cast< u16 >( base.hexBuffer.size() );
+						if( !c->op2->as<IM_Condition>()->isTrue )
+							missingConditionEnds_false[c->op2->as<IM_Condition>()->conditionID] = static_cast< u16 >( base.hexBuffer.size() );
+						else missingConditionEnds_true[c->op2->as<IM_Condition>()->conditionID] = static_cast< u16 >( base.hexBuffer.size() );
 						base.hexBuffer.push_back( 0 );
 						base.hexBuffer.push_back( 0 );
 					}
 				}
 			}
-			else if( c->type == EIR_Command::Type::blockBegin )
+			else if( c->type == IM_Command::Type::blockBegin )
 			{//Is new block
 				u16 address = static_cast<u16>( base.hexBuffer.size() );
 				blockBeginAddresses[c->id] = address;
@@ -415,7 +415,7 @@ namespace nigel
 					base.hexBuffer[0x2A] = 0x32;//reti
 				}
 			}
-			else if( c->type == EIR_Command::Type::blockEnd )
+			else if( c->type == IM_Command::Type::blockEnd )
 			{//End of a block
 				u16 address = static_cast<u16>( base.hexBuffer.size() );
 				blockEndAddresses[c->id] = address;
@@ -429,7 +429,7 @@ namespace nigel
 					missingEndBlocks.erase( c->id );
 				}
 			}
-			else if( c->type == EIR_Command::Type::blockFinish )
+			else if( c->type == IM_Command::Type::blockFinish )
 			{//Finish the block
 				u16 address = static_cast<u16>( base.hexBuffer.size() );
 				blockFinishAddresses[c->id] = address;
@@ -443,7 +443,7 @@ namespace nigel
 					missingFinishBlocks.erase( c->id );
 				}
 			}
-			else if( c->type == EIR_Command::Type::conditionEnd )
+			else if( c->type == IM_Command::Type::conditionEnd )
 			{//End of a condition
 				u16 address = static_cast<u16>( base.hexBuffer.size() );
 				conditionEnds_true[c->id] = address;

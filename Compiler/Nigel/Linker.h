@@ -5,7 +5,7 @@
 
 namespace nigel
 {
-		//Linkes EIR-structure into a hex file.
+		//Linkes IMC into a hex file.
 	class Linker : public BuilderExecutable
 	{
 	public:

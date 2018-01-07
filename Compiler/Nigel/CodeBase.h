@@ -3,7 +3,7 @@
 
 #include "Token.h"
 #include "AstExpr.h"
-#include "EIR_Command.h"
+#include "IM_Command.h"
 
 namespace nigel
 {
@@ -19,7 +19,7 @@ namespace nigel
 		MemModel memModel = MemModel::large;
 		bool printLexer = false;
 		bool printAST = false;
-		bool printEIR = false;
+		bool printIMC = false;
 		bool printAssembly = false;
 
 		//Generated data
@@ -38,8 +38,8 @@ namespace nigel
 
 		std::shared_ptr<AstBlock> globalAst;//Initial block of execution.
 
-		std::list<std::shared_ptr<EIR_Command>> eirCommands;//List of commands represending the EIR.
-		std::map<u32, std::shared_ptr<EIR_Variable>> eirValues;//Set of values id in the EIR, mapped to their id.
+		std::list<std::shared_ptr<IM_Command>> imCommands;//List of commands represending the IMC.
+		std::map<u32, std::shared_ptr<IM_Variable>> imValues; //Set of values id in the IMC, mapped to their id.
 
 		std::vector<u8> hexBuffer;//Buffer with generated hex code
 	};

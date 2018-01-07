@@ -21,7 +21,7 @@ namespace nigel
 
 		preprocessorFailed,
 		astParsingFailed,
-		eirParsingFailed,
+		imParsingFailed,
 		linkerFailed,
 
 		count

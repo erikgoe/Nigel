@@ -52,11 +52,11 @@ The Compiler is divided into these parts:
           |
           v
 +--------------------+
-|     EIR Parser     |
+|    IM Generator    |
 +--------------------+
           |
           v
-         EIR
+         IMC
           |
           v
 +--------------------+

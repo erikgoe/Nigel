@@ -6,7 +6,7 @@ add_executable(nigel
     Builder.cpp
     BuilderTask.cpp
     CodeBase.cpp
-    EIR_Parser.cpp
+    IMC_Generator.cpp
     HelperDefinitions.cpp
     Lexer.cpp
     Linker.cpp

@@ -1,5 +1,5 @@
-#ifndef NIGEL_EIR_COMMAND_H
-#define NIGEL_EIR_COMMAND_H
+#ifndef NIGEL_IM_COMMAND_H
+#define NIGEL_IM_COMMAND_H
 
 #include "stdafx.h"
 
@@ -96,7 +96,7 @@ namespace nigel
 	};
 
 		//Base class of a operator
-	class EIR_Operator : public std::enable_shared_from_this<EIR_Operator>
+	class IM_Operator : public std::enable_shared_from_this<IM_Operator>
 	{
 	public:
 			//Type of operator
@@ -112,11 +112,11 @@ namespace nigel
 			count
 		} type;
 
-		EIR_Operator( Type type )
+		IM_Operator( Type type )
 		{
 			this->type = type;
 		}
-		virtual ~EIR_Operator() {}
+		virtual ~IM_Operator() {}
 
 		template <typename T>
 		std::shared_ptr<T> as()
@@ -125,7 +125,7 @@ namespace nigel
 		}
 	};
 		//Variable deklaration for the linker
-	class EIR_Variable : public EIR_Operator
+	class IM_Variable : public IM_Operator
 	{
 		static u32 nextID;//Enables creation of new variables.
 
@@ -136,11 +136,11 @@ namespace nigel
 		u8 size = 8;//Size of this variable in bits
 		size_t scopeOffset = 0;
 
-		static std::shared_ptr<EIR_Variable> getNew(u8 size)
+		static std::shared_ptr<IM_Variable> getNew(u8 size)
 		{
-			return std::make_shared<EIR_Variable>( nextID++, size );
+			return std::make_shared<IM_Variable>( nextID++, size );
 		}
-		EIR_Variable(u32 id, u8 size) : EIR_Operator( EIR_Operator::Type::variable)
+		IM_Variable(u32 id, u8 size) : IM_Operator( IM_Operator::Type::variable)
 		{
 			this->id = id;
 			this->size = size;
@@ -157,28 +157,28 @@ namespace nigel
 	};
 
 		//Constant value from a literal
-	class EIR_Constant : public EIR_Operator
+	class IM_Constant : public IM_Operator
 	{
 	public:
 		u8 data = 0;
 
-		static std::shared_ptr<EIR_Constant> fromAstLiteral( std::shared_ptr<AstLiteral> ast )
+		static std::shared_ptr<IM_Constant> fromAstLiteral( std::shared_ptr<AstLiteral> ast )
 		{
-			return std::make_shared<EIR_Constant>( ast->token->as<Token_NumberL>()->number );
+			return std::make_shared<IM_Constant>( ast->token->as<Token_NumberL>()->number );
 		}
-		static std::shared_ptr<EIR_Constant> fromConstant( u8 value )
+		static std::shared_ptr<IM_Constant> fromConstant( u8 value )
 		{
-			return std::make_shared<EIR_Constant>( value );
+			return std::make_shared<IM_Constant>( value );
 		}
 
-		EIR_Constant( u8 data ) : EIR_Operator( EIR_Operator::Type::constant )
+		IM_Constant( u8 data ) : IM_Operator( IM_Operator::Type::constant )
 		{
 			this->data = data;
 		}
 	};
 
 		//Special function register
-	class EIR_SFR : public EIR_Operator
+	class IM_SFR : public IM_Operator
 	{
 	public:
 		enum class SFR
@@ -193,18 +193,18 @@ namespace nigel
 		};
 		u8 address = 0;
 
-		static std::shared_ptr<EIR_SFR> getSFR( SFR sfr )
+		static std::shared_ptr<IM_SFR> getSFR( SFR sfr )
 		{
-			return std::make_shared<EIR_SFR>( sfr );
+			return std::make_shared<IM_SFR>( sfr );
 		}
-		EIR_SFR( SFR address ) : EIR_Operator( EIR_Operator::Type::sfr )
+		IM_SFR( SFR address ) : IM_Operator( IM_Operator::Type::sfr )
 		{
 			this->address = static_cast<u8>( address );
 		}
 	};
 
 		//Address of a block
-	class EIR_Block : public EIR_Operator
+	class IM_Block : public IM_Operator
 	{
 	public:
 		u32 blockID = 0;
@@ -212,30 +212,30 @@ namespace nigel
 		bool begin = false;//Otherwise to the end.
 		bool finish = false;//If is with stack destruction
 
-		static std::shared_ptr<EIR_Block> getBlockBegin( u32 id )
+		static std::shared_ptr<IM_Block> getBlockBegin( u32 id )
 		{
-			return std::make_shared<EIR_Block>( id, true, false );
+			return std::make_shared<IM_Block>( id, true, false );
 		}
-		static std::shared_ptr<EIR_Block> getBlockBegin( String symbol )
+		static std::shared_ptr<IM_Block> getBlockBegin( String symbol )
 		{
-			return std::make_shared<EIR_Block>( symbol, true );
+			return std::make_shared<IM_Block>( symbol, true );
 		}
 
-		static std::shared_ptr<EIR_Block> getBlockEnd( u32 id )
+		static std::shared_ptr<IM_Block> getBlockEnd( u32 id )
 		{
-			return std::make_shared<EIR_Block>( id, false, false );
+			return std::make_shared<IM_Block>( id, false, false );
 		}
-		static std::shared_ptr<EIR_Block> getBlockFinish( u32 id )
+		static std::shared_ptr<IM_Block> getBlockFinish( u32 id )
 		{
-			return std::make_shared<EIR_Block>( id, false, true );
+			return std::make_shared<IM_Block>( id, false, true );
 		}
-		EIR_Block( u32 blockID, bool begin, bool finish ) : EIR_Operator( EIR_Operator::Type::block )
+		IM_Block( u32 blockID, bool begin, bool finish ) : IM_Operator( IM_Operator::Type::block )
 		{
 			this->blockID = blockID;
 			this->begin = begin;
 			this->finish = finish;
 		}
-		EIR_Block( String symbol, bool begin ) : EIR_Operator( EIR_Operator::Type::block )
+		IM_Block( String symbol, bool begin ) : IM_Operator( IM_Operator::Type::block )
 		{
 			this->symbol = symbol;
 			this->begin = begin;
@@ -243,7 +243,7 @@ namespace nigel
 	};
 
 		//Address of a block
-	class EIR_Condition : public EIR_Operator
+	class IM_Condition : public IM_Operator
 	{
 		static u32 nextConditionPos;//Enables jmp in conditions.
 
@@ -251,12 +251,12 @@ namespace nigel
 		u32 conditionID = 0;
 		bool isTrue = true;//Jmp to true or 2 more to false
 
-		static std::shared_ptr<EIR_Condition> getNew( u32 id, bool isTrue )
+		static std::shared_ptr<IM_Condition> getNew( u32 id, bool isTrue )
 		{
-			return std::make_shared<EIR_Condition>( id, isTrue );
+			return std::make_shared<IM_Condition>( id, isTrue );
 		}
 
-		EIR_Condition( u32 blockID, bool isTrue ) : EIR_Operator( EIR_Operator::Type::condition )
+		IM_Condition( u32 blockID, bool isTrue ) : IM_Operator( IM_Operator::Type::condition )
 		{
 			this->conditionID = blockID;
 			this->isTrue = isTrue;
@@ -271,7 +271,7 @@ namespace nigel
 
 
 		//Single command
-	class EIR_Command
+	class IM_Command
 	{
 	public:
 		enum class Type
@@ -284,13 +284,13 @@ namespace nigel
 		} type = Type::operation;
 
 		HexOp operation;//Id of the operation
-		std::shared_ptr<EIR_Operator> op1 = nullptr;//First operator
-		std::shared_ptr<EIR_Operator> op2 = nullptr;//Second operator
+		std::shared_ptr<IM_Operator> op1 = nullptr;//First operator
+		std::shared_ptr<IM_Operator> op2 = nullptr;//Second operator
 
 		u32 id = 0;//Is used in case of blockBegin | blockEnd | conditionEnd.
 		String symbol;//If the block has a symbol (in case of a function)
 
-		EIR_Command() {}
+		IM_Command() {}
 
 	};
 }

@@ -29,7 +29,7 @@ namespace nigel
 			break;
 		}
 
-		if( hasError ) return ExecutionResult::eirParsingFailed;
+		if( hasError ) return ExecutionResult::imParsingFailed;
 		else return ExecutionResult::success;
 	}
 	void Preprocessor::processFile( CodeBase &base, std::shared_ptr<fs::path> path, std::vector<CodeBase::LineContent> &result, std::map<String, String> &definitions, size_t &ifdefCount, bool &ignoreifdef, size_t &posAtIgnore )
