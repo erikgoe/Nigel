@@ -6,9 +6,9 @@ Nigel is a new programming language for the 8051 microcontroller, with a c-like 
 
 ## Goals
 - [x] Complete compilation from source code to hex files.
-- [x] Resolve possible expressions
+- [x] Resolve complex expressions
 - [x] Functions
-- [x] Controll flow (if, while, etc.)
+- [x] Control flow (if, while, etc.)
 - [x] Pointers
 - [x] Intern/extern RAM
 - [x] Preprocessor
