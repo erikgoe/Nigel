@@ -28,6 +28,10 @@ namespace nigel
 	{
 		return !isWhitespace( c ) && !isOperator( c ) && !isNumber( c ) && !isDividingToken( c );
 	}
+	bool Lexer::isHexValue( char c )
+	{
+		return c >= 'A' && c <= 'F' || c >= 'a' && c <= 'f';
+	}
 	std::shared_ptr<Token> Lexer::makeToken( std::shared_ptr<Token> token )
 	{
 		token->lineNo = currLineNo;
@@ -218,9 +222,9 @@ namespace nigel
 					tmpStr += c;
 				}
 			}
-			else if( isNumber( c ) || ( c == 'x' && tmpStr == "0" ) )
+			else if (isNumber(c) || (c == 'x' && tmpStr == "0") || ( isHexValue(c) && tmpStr.size() >=2 && tmpStr[0] == '0' && tmpStr[1] == 'x'))
 			{
-				if( tmpStr.empty() || isNumber( previousC ) || isIdentifier( tmpStr.front() ) || previousC == '0' || tmpStr == "0x" ||
+				if( tmpStr.empty() || isNumber( previousC ) || isIdentifier( tmpStr.front() ) || previousC == '0' || tmpStr.substr(0, 2) == "0x" ||
 					( ( tmpStr == "-" || tmpStr == "+" ) && ( base.lexerStruct.empty() || base.lexerStruct.back()->type == Token::Type::operatorToken || base.lexerStruct.back()->type == Token::Type::dividingToken ) )
 					) tmpStr += c;
 				else if( !tmpStr.empty() )

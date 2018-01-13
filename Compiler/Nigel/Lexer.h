@@ -13,6 +13,7 @@ namespace nigel
 		bool isNumber(char c);
 		bool isDividingToken(char c);
 		bool isIdentifier( char c );
+		bool isHexValue(char c);
 
 		size_t currLineNo = 1;
 		size_t currColumnNo = 0;
