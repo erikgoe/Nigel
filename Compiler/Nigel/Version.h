@@ -1,6 +1,6 @@
 #ifndef NIGEL_VERSION_H
 #define NIGEL_VERSION_H
 
-#define NIGEL_VERSION 1.0
+#define NIGEL_VERSION 1.2
 
 #endif // !NIGEL_VERSION_H
