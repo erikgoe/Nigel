@@ -19,6 +19,7 @@ Nigel is a new programming language for the 8051 microcontroller, with a c-like 
 ## Nice to have
 * arrays (can be emulated with a pointer)
 * string literals
+* structs
 * optimizing code
 
 ## How does it work?
