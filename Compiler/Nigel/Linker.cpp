@@ -502,14 +502,16 @@ namespace nigel
 
 			if( out.size() >= 32 )
 			{
+				checksum += ( out.size() / 2 ) + ( startAddr & 0xff ) + ( startAddr >> 8 );
 				fileStr += ":" + int_to_hex( static_cast< u8 >( out.size() / 2 ) ) + int_to_hex( startAddr ) + "00" + out + int_to_hex( static_cast< u8 >( ~( checksum % 256 )+1 ) ) + "\r\n";
 				checksum = 0;
 				startAddr += static_cast< u16 >( out.size() / 2 );
 				out = "";
-			}
+            }
 		}
 		if( out.size() > 0 )
 		{
+			checksum += ( out.size() / 2 ) + ( startAddr & 0xff ) + ( startAddr >> 8 );
 			fileStr += ":" + int_to_hex( static_cast< u8 >( out.size() / 2 ) ) + int_to_hex( startAddr ) + "00" + out + int_to_hex( static_cast< u8 >( ~( checksum % 256 )+1 ) ) + "\r\n";
 		}
 		fileStr += ":00000001FF";
